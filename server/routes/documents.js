@@ -2,9 +2,13 @@ const { createHash } = require('node:crypto');
 const express = require('express');
 const multer = require('multer');
 const { pool } = require('../db/pool');
+const { inTransaction } = require('../db/transaction');
 const { authenticate, requireRole, verifyResourceAccess, isRecordId } = require('../middleware/auth');
 const { logAudit } = require('../services/auditLogger');
-const { extractDocumentData, runCrossDocumentAudit } = require('../services/forensicsEngine');
+const {
+  extractDocumentData, runCrossDocumentAudit, normalizeDocumentData, feeBand,
+} = require('../services/forensicsEngine');
+const { predictFraudRisk, clampMultiple } = require('../services/fraudRiskModel');
 
 const router = express.Router();
 const upload = multer({
@@ -67,21 +71,6 @@ function hashDocument(data) {
     ? data
     : JSON.stringify(Object.fromEntries(Object.keys(data).sort().map(key => [key, data[key]])));
   return createHash('sha256').update(content).digest('hex');
-}
-
-async function inTransaction(action) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const result = await action(client);
-    await client.query('COMMIT');
-    return result;
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
 }
 
 async function findDocument(db, workerId, fileHash) {
@@ -263,6 +252,120 @@ router.post('/audit', requireRole('worker'), async (req, res) => {
     return audit.id;
   });
   return res.status(201).json({ auditId, ...report });
+});
+
+const agencyStatuses = new Set(['verified', 'flagged', 'revoked', 'not_found']);
+const riskLevels = new Set(['low', 'medium', 'high']);
+const maxFeeAmount = 9_999_999_999.99;
+
+function positiveFee(value) {
+  const number = typeof value === 'string' && /^\d+(?:\.\d{1,2})?$/.test(value.trim()) ? Number(value) : value;
+  return typeof number === 'number' && Number.isFinite(number) && number > 0 && number <= maxFeeAmount ? number : null;
+}
+
+// What-if scoring for the risk explorer. Validates input and never writes to the database.
+router.post('/simulate-risk', (req, res) => {
+  const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {};
+  const chargedFeeBdt = positiveFee(body.chargedFeeBdt);
+  const maxLegalFeeBdt = positiveFee(body.maxLegalFeeBdt);
+  if (chargedFeeBdt === null || maxLegalFeeBdt === null) {
+    return res.status(400).json({ error: 'chargedFeeBdt and maxLegalFeeBdt must be positive BDT amounts.' });
+  }
+  const {
+    agencyStatus = 'verified', corridorRiskLevel = 'medium',
+    agencyLicenseMismatch = false, missingSalaryClause = false,
+  } = body;
+  if (!agencyStatuses.has(agencyStatus)) {
+    return res.status(400).json({ error: 'agencyStatus must be verified, flagged, revoked, or not_found.' });
+  }
+  if (!riskLevels.has(corridorRiskLevel)) {
+    return res.status(400).json({ error: 'corridorRiskLevel must be low, medium, or high.' });
+  }
+  if (typeof agencyLicenseMismatch !== 'boolean' || typeof missingSalaryClause !== 'boolean') {
+    return res.status(400).json({ error: 'agencyLicenseMismatch and missingSalaryClause must be booleans.' });
+  }
+
+  const overchargeMultiple = Number(clampMultiple(chargedFeeBdt / maxLegalFeeBdt).toFixed(4));
+  return res.json({
+    overchargeMultiple,
+    feeVerdict: feeBand(chargedFeeBdt, maxLegalFeeBdt),
+    ...predictFraudRisk({
+      overchargeMultiple,
+      agencyFlaggedOrRevoked: agencyStatus === 'flagged' || agencyStatus === 'revoked',
+      agencyLicenseMismatch,
+      missingSalaryClause,
+      highRiskCorridor: corridorRiskLevel === 'high',
+    }),
+    simulated: true,
+  });
+});
+
+function validateDocumentId(req, res, next) {
+  if (!isRecordId(req.params.id)) return res.status(400).json({ error: 'Document ID must be a valid record ID.' });
+  return next();
+}
+
+async function getDocumentRecordOwner(req) {
+  const { rows } = await pool.query('SELECT worker_id FROM probashi_shield.documents WHERE id = $1', [req.params.id]);
+  if (!rows[0]) return null;
+  // Nominees are read-only, so confirmation is never delegated to them.
+  return { workerId: rows[0].worker_id, nomineeId: null, entityType: 'document', entityId: req.params.id };
+}
+
+// Confirms or corrects an unclear extraction so the audit can use it.
+router.patch('/:id/confirm', validateDocumentId, verifyResourceAccess(getDocumentRecordOwner), async (req, res) => {
+  const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {};
+  const corrections = body.extractedData;
+  if (corrections !== undefined && (!corrections || typeof corrections !== 'object' || Array.isArray(corrections))) {
+    return res.status(400).json({ error: 'extractedData must be an object of document fields.' });
+  }
+
+  let corrected;
+  if (corrections !== undefined) {
+    try {
+      corrected = normalizeDocumentData({ ...corrections, is_blurry_or_unclear: false });
+    } catch (error) {
+      if (error.code === 'INVALID_MANUAL_DATA') return res.status(400).json({ error: error.message, code: error.code });
+      throw error;
+    }
+  }
+
+  const result = await inTransaction(async (client) => {
+    const { rows } = await client.query(
+      `SELECT id, worker_id, extracted_data, extraction_status FROM probashi_shield.documents
+       WHERE id = $1 FOR UPDATE`,
+      [req.params.id],
+    );
+    const [current] = rows;
+    if (!current) return { status: 404, body: { error: 'Not Found' } };
+    if (!corrected && current.extraction_status === 'confirmed') {
+      return { status: 409, body: { error: 'This document is already confirmed. Supply extractedData to correct it.' } };
+    }
+    if (!corrected && !current.extracted_data) {
+      return { status: 422, body: { error: 'No extracted data exists. Supply extractedData to confirm this document.' } };
+    }
+
+    const data = corrected ?? { ...current.extracted_data, is_blurry_or_unclear: false };
+    const changedFields = Object.keys(data).filter(field => (
+      JSON.stringify(data[field]) !== JSON.stringify(current.extracted_data?.[field] ?? null)
+    ));
+    const { rows: updated } = await client.query(
+      `UPDATE probashi_shield.documents
+       SET extracted_data = $2, extraction_status = 'confirmed'
+       WHERE id = $1 RETURNING ${documentFields}`,
+      [current.id, JSON.stringify(data)],
+    );
+    await logAudit({
+      actorId: req.user.id,
+      targetUserId: current.worker_id,
+      action: 'DOCUMENT_CONFIRMED',
+      entityType: 'document',
+      entityId: current.id,
+      details: { previousStatus: current.extraction_status, corrected: Boolean(corrected), changedFields },
+    }, client);
+    return { status: 200, body: { document: updated[0] } };
+  });
+  return res.status(result.status).json(result.body);
 });
 
 router.get('/my', selectWorker, verifyResourceAccess(getDocumentOwner), async (req, res) => {

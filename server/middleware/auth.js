@@ -33,21 +33,28 @@ function authenticate(req, res, next) {
   return next();
 }
 
-async function denyAccess(req, res) {
+// Every 403 is logged: record-level denials name the record's owner, and
+// role denials (for example a worker calling an admin route) name the endpoint.
+async function denyAccess(req, res, requiredRoles) {
   const ownership = req[resourceOwner];
+  const path = req.originalUrl.split('?')[0].slice(0, 200);
+  let entry;
   if (ownership && String(req.user.id) !== String(ownership.workerId)) {
     const { workerId, entityType = 'worker', entityId = workerId } = ownership;
+    entry = { targetUserId: workerId, entityType, entityId, details: { method: req.method, path, role: req.user.role } };
+  } else if (!ownership && requiredRoles) {
+    entry = {
+      targetUserId: null,
+      entityType: 'endpoint',
+      entityId: req.user.id,
+      details: { method: req.method, path, role: req.user.role, requiredRoles },
+    };
+  }
+  if (entry) {
     try {
-      await logAudit({
-        actorId: req.user.id,
-        targetUserId: workerId,
-        action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
-        entityType,
-        entityId,
-        details: { method: req.method, role: req.user.role },
-      });
+      await logAudit({ actorId: req.user.id, action: 'UNAUTHORIZED_ACCESS_ATTEMPT', ...entry });
     } catch (error) {
-      console.error('Failed to record denied resource access', error.code || error.name);
+      console.error('Failed to record denied access', error.code || error.name);
     }
   }
   return res.status(403).json({ error: 'Forbidden' });
@@ -55,8 +62,9 @@ async function denyAccess(req, res) {
 
 function requireRole(...allowedRoles) {
   return (req, res, next) => {
-    if (!allowedRoles.includes(req.user?.role)) {
-      return denyAccess(req, res);
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!allowedRoles.includes(req.user.role)) {
+      return denyAccess(req, res, allowedRoles);
     }
     return next();
   };

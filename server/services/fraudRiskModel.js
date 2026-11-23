@@ -69,15 +69,27 @@ function train(cases) {
 
 const weights = train(syntheticCases());
 
+const maxOverchargeMultiple = 20;
+
+// Coerce a numeric feature to a finite number in [0, 20]. Missing or invalid
+// values fall back to 1 (fee at the cap), so the model never sees NaN.
+function clampMultiple(value) {
+  const number = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
+  if (typeof number !== 'number' || !Number.isFinite(number)) return 1;
+  return Math.min(Math.max(number, 0), maxOverchargeMultiple);
+}
+
+function flag(value) {
+  return Number(value === 1 || value === true || value === '1' || value === 'true');
+}
+
 function predictFraudRisk(features = {}) {
-  const feeMultiple = Number.isFinite(features.overchargeMultiple) && features.overchargeMultiple >= 0
-    ? features.overchargeMultiple
-    : 1;
+  const feeMultiple = clampMultiple(features?.overchargeMultiple);
   // Center on the legal fee cap and bound extrapolation beyond the training range.
-  const vector = [1, Math.min(feeMultiple, 6.3) - 1, ...binaryFactors.map(([factor]) => (
-    Number(features[factor] === 1 || features[factor] === true)
-  ))];
-  const fraudProbability = Number((sigmoid(linearScore(vector, weights)) * 100).toFixed(2));
+  const vector = [1, Math.min(feeMultiple, 6.3) - 1, ...binaryFactors.map(([factor]) => flag(features?.[factor]))];
+  const raw = sigmoid(linearScore(vector, weights)) * 100;
+  // A synthetic-data model should never claim certainty in either direction.
+  const fraudProbability = Number(Math.min(Math.max(Number.isFinite(raw) ? raw : 50, 0.1), 99.9).toFixed(2));
   let riskTier = 'Low';
   if (fraudProbability >= 80) riskTier = 'Critical';
   else if (fraudProbability >= 50) riskTier = 'High';
@@ -99,4 +111,4 @@ function predictFraudRisk(features = {}) {
   return { fraudProbability, riskTier, topFactors };
 }
 
-module.exports = { predictFraudRisk };
+module.exports = { predictFraudRisk, clampMultiple, maxOverchargeMultiple };
