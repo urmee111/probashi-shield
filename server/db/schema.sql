@@ -46,9 +46,7 @@ CREATE TABLE IF NOT EXISTS probashi_shield.documents (
     worker_id BIGINT NOT NULL REFERENCES probashi_shield.users (id),
     agency_id BIGINT REFERENCES probashi_shield.agencies (id),
     corridor_id BIGINT REFERENCES probashi_shield.corridors (id),
-    document_type TEXT NOT NULL CHECK (
-        document_type IN ('offer_letter', 'receipt', 'demand_letter', 'contract', 'visa', 'other')
-    ),
+    document_type TEXT NOT NULL,
     file_path VARCHAR(1024),
     sha256 CHAR(64),
     extracted_data JSONB,
@@ -58,6 +56,24 @@ CREATE TABLE IF NOT EXISTS probashi_shield.documents (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (worker_id, sha256)
 );
+
+ALTER TABLE probashi_shield.documents
+    ADD COLUMN IF NOT EXISTS extraction_method TEXT CHECK (extraction_method IN ('manual_fallback', 'gemini'));
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'probashi_shield.documents'::regclass AND conname = 'ck_documents_type'
+    ) THEN
+        ALTER TABLE probashi_shield.documents
+            DROP CONSTRAINT IF EXISTS documents_document_type_check,
+            ADD CONSTRAINT ck_documents_type CHECK (
+                document_type IN ('job_offer', 'offer_letter', 'receipt', 'demand_letter', 'contract', 'visa', 'other')
+            );
+    END IF;
+END;
+$$;
 
 CREATE INDEX IF NOT EXISTS ix_documents_agency ON probashi_shield.documents (agency_id);
 CREATE INDEX IF NOT EXISTS ix_documents_corridor ON probashi_shield.documents (corridor_id);

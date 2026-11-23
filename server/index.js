@@ -4,6 +4,8 @@ const cors = require('cors');
 const { checkConnection } = require('./db/pool');
 const authRoutes = require('./routes/auth');
 const directoryRoutes = require('./routes/directory');
+const documentRoutes = require('./routes/documents');
+const pathwayRoutes = require('./routes/pathways');
 
 const app = express();
 
@@ -20,6 +22,8 @@ app.get('/api/health', async (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/pathways', pathwayRoutes);
 app.use(['/api/directory', '/api'], directoryRoutes);
 
 app.use((_req, res) => res.status(404).json({ error: 'Not Found' }));

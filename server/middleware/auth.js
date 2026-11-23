@@ -86,4 +86,4 @@ function verifyResourceAccess(getOwnerIds) {
   };
 }
 
-module.exports = { authenticate, requireRole, verifyResourceAccess, tokenIssuer };
+module.exports = { authenticate, requireRole, verifyResourceAccess, tokenIssuer, isRecordId };
