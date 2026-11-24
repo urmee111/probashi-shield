@@ -39,7 +39,7 @@ Legend: ✅ done · 🟡 partly done · ❌ not started
 
 ### Module 2: Cost fairness & pathway optimizer (A02) ✅
 - ✅ Green / Amber / Red fee bands with the rule source cited
-- 🟡 **Effective dates:** the column exists, but the seed data leaves it empty, so the UI shows "effective date unrecorded"
+- ✅ **Effective dates:** every corridor cites 1 Jan 2026, labelled in the rule source as a demo fixture
 - ✅ Constraint solver, conflict diagnoser and minimal relaxation suggestions
 
 ### Module 3: Self-healing journey (A07) ✅
@@ -64,7 +64,7 @@ These are things the proposal promises that the code does not yet do. A judge re
 | G1 | "Row-Level Security" | Access control is enforced in the API, with no Postgres RLS policies | Add RLS policies **or** reword to "API-level ownership checks with 403 + audit log" in README/video | 1–2 h, or 5 min to reword |
 | G2 | Nominee access "requires explicit worker-generated consent token" | Column exists; nominee is linked by email when the journey is created | Add a "Generate consent link" endpoint plus an accept step, **or** describe the email link as consent | 2–3 h |
 | G3 | Admin can "update corridor fee rules" | No endpoint or UI | `PATCH /api/admin/corridors/:id` (audited) plus a small edit form | 1–2 h |
-| G4 | Fee bands with "effective dates" | `effective_date` is empty in the seed | Add dates to `seed.sql` and rerun `npm run db:init` | 15 min |
+| G4 | Fee bands with "effective dates" | ✅ Done: seeded as a labelled demo date (1 Jan 2026) | — | — |
 | G5 | "Freezes upcoming payment schedules" | A single frozen flag | Show it as "payment milestones frozen" in the UI, **or** add a small payments table | 30 min – 2 h |
 
 Admin "override stuck steps" works already: an admin can change steps on any journey.
@@ -86,12 +86,12 @@ Admin "override stuck steps" works already: an admin can change steps on any jou
    - setup steps
    - a feature-to-rubric map
    - the "synthetic data / not a live BMET feed" disclaimer
-4. **Record the 3-minute demo video** (S01). Every scene in the proposal's script already works:
+4. **Record the 3-minute demo video** (S01). Before each take, run `npm run demo:reset` in `server` (add `-- --ready` to start with steps 1–4 already passed). It clears all documents, audits, journeys and logs, keeps accounts and rules, and recreates journey #1. Every scene in the proposal's script already works:
    - 0:00 Rahim → Load scam demo → Run audit → 5.70× Red, mismatch, missing salary clause
    - 0:55 Pathways → Test Conflict → Apply Relaxation
    - 1:40 Journey → pass steps 1–4 → Simulate medical expiry → frozen banner → Fatema sees the alert
    - 2:30 Duplicate upload (409), Karim's isolation test (403), Fatema's read-only test (403)
-5. **Fix G4** (effective dates). It is quick and visible in the audit card.
+5. ~~Fix G4 (effective dates)~~ ✅ done. Journey page load also cut from ~5 s to ~1.2 s.
 
 ### Should do if time allows
 6. G1: RLS policies, or reword the claim

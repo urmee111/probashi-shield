@@ -8,6 +8,7 @@
     "db:migrate:mysql": "node db/migrateMysql.js",
     "dev": "nodemon index.js",
     "seed:users": "node db/seedUsers.js",
+    "demo:reset": "node db/resetDemo.js",
     "test": "node --test"
   },
   "keywords": [],
