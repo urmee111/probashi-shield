@@ -138,3 +138,76 @@
 @media (prefers-reduced-motion: reduce) {
     .ps-frozen, .ps-pulse { animation: none; }
 }
+
+/* Probashi Sahayak chatbot themes. Every chat colour reads from these variables,
+   so a theme is just a value of data-chat-theme on the chat root. */
+.ps-chat {
+    --chat-from: oklch(0.6 0.15 163);
+    --chat-to: oklch(0.52 0.12 195);
+    --chat-on-brand: oklch(0.99 0 0);
+    --chat-soft: oklch(0.96 0.04 165);
+    --chat-soft-fg: oklch(0.38 0.09 165);
+    --chat-bg: oklch(0.985 0.006 165);
+    --chat-surface: oklch(1 0 0);
+    --chat-fg: oklch(0.2 0.02 200);
+    --chat-muted: oklch(0.52 0.02 200);
+    --chat-border: oklch(0.91 0.015 170);
+    --chat-glow: oklch(0.6 0.15 163 / 0.35);
+    color: var(--chat-fg);
+}
+.ps-chat[data-chat-theme="ocean"] {
+    --chat-from: oklch(0.58 0.2 265);
+    --chat-to: oklch(0.6 0.16 225);
+    --chat-soft: oklch(0.96 0.03 265);
+    --chat-soft-fg: oklch(0.42 0.17 265);
+    --chat-bg: oklch(0.985 0.006 265);
+    --chat-fg: oklch(0.2 0.03 265);
+    --chat-muted: oklch(0.52 0.03 265);
+    --chat-border: oklch(0.91 0.02 265);
+    --chat-glow: oklch(0.58 0.2 265 / 0.35);
+}
+.ps-chat[data-chat-theme="sunset"] {
+    --chat-from: oklch(0.7 0.17 55);
+    --chat-to: oklch(0.6 0.21 15);
+    --chat-soft: oklch(0.96 0.035 50);
+    --chat-soft-fg: oklch(0.45 0.14 35);
+    --chat-bg: oklch(0.985 0.008 60);
+    --chat-fg: oklch(0.22 0.03 40);
+    --chat-muted: oklch(0.52 0.03 40);
+    --chat-border: oklch(0.91 0.025 50);
+    --chat-glow: oklch(0.65 0.19 35 / 0.35);
+}
+.ps-chat[data-chat-theme="midnight"] {
+    --chat-from: oklch(0.62 0.2 290);
+    --chat-to: oklch(0.6 0.2 330);
+    --chat-soft: oklch(0.3 0.05 290);
+    --chat-soft-fg: oklch(0.88 0.06 290);
+    --chat-bg: oklch(0.17 0.02 280);
+    --chat-surface: oklch(0.23 0.025 280);
+    --chat-fg: oklch(0.95 0.01 280);
+    --chat-muted: oklch(0.7 0.03 280);
+    --chat-border: oklch(1 0 0 / 0.1);
+    --chat-glow: oklch(0.62 0.2 290 / 0.45);
+    color-scheme: dark;
+}
+.ps-chat-brand { background-image: linear-gradient(135deg, var(--chat-from), var(--chat-to)); color: var(--chat-on-brand); }
+.ps-chat-glow { box-shadow: 0 18px 50px -12px var(--chat-glow), 0 4px 14px -6px oklch(0 0 0 / 0.18); }
+.ps-chat-dots { scrollbar-width: none; }
+.ps-chat-dots::-webkit-scrollbar { display: none; }
+.ps-chat-log { background-image: radial-gradient(circle at 100% 0%, var(--chat-soft), transparent 55%); }
+
+@keyframes ps-chat-bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40% { transform: translateY(-4px); opacity: 1; }
+}
+.ps-chat-typing span { animation: ps-chat-bounce 1.2s ease-in-out infinite; }
+.ps-chat-typing span:nth-child(2) { animation-delay: 0.15s; }
+.ps-chat-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes ps-chat-ring {
+    0% { box-shadow: 0 0 0 0 var(--chat-glow); }
+    100% { box-shadow: 0 0 0 14px transparent; }
+}
+.ps-chat-ring { animation: ps-chat-ring 2.4s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+    .ps-chat-typing span, .ps-chat-ring { animation: none; }
+}

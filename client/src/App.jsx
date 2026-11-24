@@ -54,7 +54,7 @@ export default function App() {
         <BrowserRouter>
           <Shell />
         </BrowserRouter>
-        <Toaster position="bottom-left" richColors closeButton />
+        <Toaster position="bottom-left" richColors closeButton visibleToasts={2} />
       </AuthProvider>
     </I18nProvider>
   );

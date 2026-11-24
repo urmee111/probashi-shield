@@ -170,9 +170,10 @@ export default function PathwaysPage() {
           </CardContent>
         </Card>
 
-        <div className="min-w-0 space-y-4" aria-live="polite">
+        <div className={cn('min-w-0 space-y-4 transition-opacity', busy && result && 'opacity-50')} aria-live="polite" aria-busy={busy}>
           <ErrorAlert error={error} className="mb-0" />
-          {!result && !error && <EmptyState title={t('path.empty')}>{t('path.emptyBody')}</EmptyState>}
+          {busy && !result && <div className="flex justify-center py-10"><Spinner className="size-6" /></div>}
+          {!result && !error && !busy && <EmptyState title={t('path.empty')}>{t('path.emptyBody')}</EmptyState>}
 
           {result?.feasible && (
             <>

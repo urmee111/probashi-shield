@@ -370,6 +370,7 @@ const bn = {
   'chat.placeholder': 'ফি, এজেন্সি নিয়ে প্রশ্ন করুন…',
   'chat.send': 'পাঠান',
   'chat.close': 'সহায়ক বন্ধ করুন',
+  'chat.new': 'নতুন চ্যাট',
   'chat.language': 'উত্তরের ভাষা',
   'chat.question': 'আপনার প্রশ্ন',
   'chat.records': '{count}টি রেকর্ড',
@@ -377,6 +378,12 @@ const bn = {
   'chat.gemini_rag': 'লাইভ Gemini RAG',
   'chat.deterministic_rag': 'নির্ভরযোগ্য বিকল্প',
   'chat.assistant': 'সহায়ক',
+  'chat.greeting': 'আসসালামু আলাইকুম! আপনার প্রবাস যাত্রায় কীভাবে সাহায্য করতে পারি?',
+  'chat.theme': 'চ্যাট থিম',
+  'chat.theme.emerald': 'পান্না',
+  'chat.theme.ocean': 'সমুদ্র',
+  'chat.theme.sunset': 'গোধূলি',
+  'chat.theme.midnight': 'মধ্যরাত',
 };
 
 export default bn;

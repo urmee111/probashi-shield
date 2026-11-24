@@ -87,7 +87,7 @@ export default function RiskSimulator() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3">
           <Field id="sim-cap" label={t('sim.cap')}>
             <NativeSelect id="sim-cap" className="w-full" value={state.cap} onChange={event => set('cap')(Number(event.target.value))}>
               {caps.map(option => <NativeSelectOption key={option.label} value={option.cap}>{option.label} · {formatBdt(option.cap)}</NativeSelectOption>)}
