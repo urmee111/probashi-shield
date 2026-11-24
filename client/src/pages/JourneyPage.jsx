@@ -84,7 +84,9 @@ export default function JourneyPage() {
   const detailLoading = selectedId != null && detail?.journey?.id !== selectedId && detail?.failedId !== selectedId;
   const journey = detailLoading ? null : detail?.journey;
   const canEdit = Boolean(journey) && (user.role === 'admin' || (user.role === 'worker' && String(journey.worker_id) === String(user.id)));
-  const nextStep = detail?.recoveryPlan?.nextRequiredAction?.stepOrder ?? 1;
+  // A 403 is only demonstrable by someone who cannot already see journey #1 (not its owner, nominee or an admin).
+  const canProbeIsolation = user.role !== 'admin' && !journeys.some(entry => entry.journey.id === 1);
+  const nextStep =detail?.recoveryPlan?.nextRequiredAction?.stepOrder ?? 1;
 
   async function patchStep(step, status) {
     setBusyStep(step.step_order);
@@ -228,11 +230,17 @@ export default function JourneyPage() {
               onRun={() => runProof('lock', 'patch', `/journeys/${journey.id}/steps/${nextStep}`, { status: 'passed' })}
             />
           )}
-          <ProofCard
-            title={t('journey.isoTitle')} description={t('journey.isoDescription')}
-            buttonLabel={t('journey.isoButton')} result={proof.isolation}
-            onRun={() => runProof('isolation', 'get', '/journeys/1')}
-          />
+          {!loading && (canProbeIsolation ? (
+            <ProofCard
+              title={t('journey.isoTitle')} description={t('journey.isoDescription')}
+              buttonLabel={t('journey.isoButton')} result={proof.isolation}
+              onRun={() => runProof('isolation', 'get', '/journeys/1')}
+            />
+          ) : (
+            <p className="rounded-lg border border-dashed border-foreground/16 px-3.5 py-3 text-[12px] leading-snug text-muted-foreground">
+              <span className="font-semibold text-foreground">{t('journey.isoTitle')}:</span> {t('journey.isoHint')}
+            </p>
+          ))}
         </aside>
       </div>
     </>

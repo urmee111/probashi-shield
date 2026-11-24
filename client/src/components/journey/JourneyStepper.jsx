@@ -58,17 +58,17 @@ function StepDetails({ step, canEdit, busyStep, onPass, onFail, compact }) {
         </p>
       )}
       {canEdit && step.status !== 'passed' && (
-        <div className={cn('flex gap-1.5', compact ? 'mt-2' : 'mt-2.5')}>
+        <div className={cn('flex gap-1.5', compact ? 'mt-2 flex-wrap justify-center' : 'mt-2.5')}>
           <button
             type="button" disabled={busyStep !== null} onClick={() => onPass(step)}
-            className={cn('inline-flex items-center justify-center rounded-[7px] bg-pass font-semibold text-white transition hover:brightness-110 disabled:opacity-50', compact ? 'h-8 min-w-12 px-3 text-[11px]' : 'h-11 min-w-20 px-4 text-sm')}
+            className={cn('inline-flex items-center justify-center rounded-[7px] bg-pass font-semibold text-white transition hover:brightness-110 disabled:opacity-50', compact ? 'h-8 min-w-12 px-3 text-[11px] min-[1100px]:min-w-0 min-[1100px]:px-2' : 'h-11 min-w-20 px-4 text-sm')}
           >
             {busyStep === step.step_order ? <Spinner className="size-3.5" /> : t('stepper.pass')}
           </button>
           {step.status !== 'failed' && (
             <button
               type="button" disabled={busyStep !== null} onClick={() => onFail(step)}
-              className={cn('inline-flex items-center justify-center rounded-[7px] border border-brick font-semibold text-brick transition hover:bg-brick/6 disabled:opacity-50', compact ? 'h-8 min-w-12 px-3 text-[11px]' : 'h-11 min-w-20 px-4 text-sm')}
+              className={cn('inline-flex items-center justify-center rounded-[7px] border border-brick font-semibold text-brick transition hover:bg-brick/6 disabled:opacity-50', compact ? 'h-8 min-w-12 px-3 text-[11px] min-[1100px]:min-w-0 min-[1100px]:px-2' : 'h-11 min-w-20 px-4 text-sm')}
             >
               {t('stepper.fail')}
             </button>
@@ -84,15 +84,15 @@ export default function JourneyStepper({ steps, ...actions }) {
   const width = Math.max(steps.length * COLUMN, 640);
   return (
     <>
-      {/* Desktop and tablet: a winding road that scrolls sideways when narrow. */}
-      <div className="ps-rail -mx-1 mt-[18px] hidden overflow-x-auto p-1 sm:block">
-        <div className="relative px-2.5 pt-[46px] pb-2.5" style={{ minWidth: width }}>
-          <svg className="absolute top-[34px] left-0" width={width} height="90" viewBox={`0 0 ${width} 90`} aria-hidden="true">
-            <path className="ps-wave" d={wavePath(width)} stroke="rgb(16 36 28 / 0.22)" strokeWidth="2" fill="none" strokeLinecap="round" />
+      {/* Tablet: a winding road that scrolls sideways. Desktop (>= 1100px): columns shrink so all steps fit in one row. */}
+      <div className="ps-rail -mx-1 mt-[18px] hidden overflow-x-auto p-1 sm:block min-[1100px]:overflow-x-visible">
+        <div className="relative min-w-(--rail-width) px-2.5 pt-[46px] pb-2.5 min-[1100px]:min-w-0 min-[1100px]:px-0" style={{ '--rail-width': `${width}px` }}>
+          <svg className="absolute top-[34px] left-0 w-full" height="90" viewBox={`0 0 ${width} 90`} preserveAspectRatio="none" aria-hidden="true">
+            <path className="ps-wave" d={wavePath(width)} stroke="rgb(16 36 28 / 0.22)" strokeWidth="2" fill="none" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
           </svg>
-          <ol className="relative flex justify-between gap-2" aria-label={t('stepper.label')}>
+          <ol className="relative flex justify-between gap-2 min-[1100px]:gap-1" aria-label={t('stepper.label')}>
             {steps.map((step, index) => (
-              <li key={step.step_order} className="flex w-[150px] flex-col items-center text-center" style={{ marginTop: OFFSETS[index % OFFSETS.length] }}>
+              <li key={step.step_order} className="flex w-[150px] flex-col items-center text-center min-[1100px]:w-auto min-[1100px]:min-w-0 min-[1100px]:flex-1" style={{ marginTop: OFFSETS[index % OFFSETS.length] }}>
                 <Node step={step} size="lg" />
                 <StepDetails step={step} compact {...actions} />
               </li>
