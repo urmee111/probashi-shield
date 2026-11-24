@@ -8,19 +8,20 @@ import { Switch } from '@/components/ui/switch';
 import { formatNumber, titleCase } from '@/format';
 import { useI18n } from '@/i18n';
 
+// Status tints: each palette colour at ~12% behind its own text colour.
 const toneClasses = {
-  green: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-  amber: 'bg-amber-50 text-amber-800 ring-amber-600/25',
-  red: 'bg-red-50 text-red-700 ring-red-600/20',
-  critical: 'bg-red-700 text-white ring-red-700',
-  blue: 'bg-sky-50 text-sky-700 ring-sky-600/20',
-  violet: 'bg-violet-50 text-violet-700 ring-violet-600/20',
-  muted: 'bg-muted text-muted-foreground ring-foreground/10',
+  green: 'bg-pass/12 text-pass ring-pass/20',
+  amber: 'bg-gold/14 text-[#7A5510] ring-gold/30',
+  red: 'bg-brick/12 text-brick ring-brick/25',
+  critical: 'bg-brick text-card ring-brick',
+  blue: 'bg-ink/8 text-ink ring-ink/15',
+  violet: 'bg-ink/8 text-ink ring-ink/15',
+  muted: 'bg-foreground/6 text-muted-foreground ring-foreground/10',
 };
 
 export function Tone({ tone = 'muted', className, children }) {
   return (
-    <Badge variant="outline" className={cn('border-transparent ring-1 ring-inset font-medium', toneClasses[tone], className)}>
+    <Badge variant="outline" className={cn('rounded-full border-transparent font-heading text-[11px] font-semibold ring-1 ring-inset', toneClasses[tone], className)}>
       {children}
     </Badge>
   );
@@ -51,10 +52,10 @@ export function TierBadge({ tier }) {
   return <Tone tone={tierTone[tier]}>{tier ? t(`tier.${tier}`, {}, tier) : '—'}</Tone>;
 }
 
-const stepTone = { passed: 'green', in_progress: 'blue', pending: 'muted', reopened: 'amber', expired: 'red', failed: 'red' };
+const stepTone = { passed: 'green', in_progress: 'blue', pending: 'muted', reopened: 'amber', expired: 'red', failed: 'red', blocked: 'red' };
 export function StatusPill({ status }) {
   const { t } = useI18n();
-  return <Tone tone={stepTone[status]} className="rounded-full">{t(`status.${status}`, {}, titleCase(status))}</Tone>;
+  return <Tone tone={stepTone[status]}>{t(`status.${status}`, {}, titleCase(status))}</Tone>;
 }
 
 const roleTone = { worker: 'blue', nominee: 'violet', admin: 'red' };
@@ -64,10 +65,9 @@ export function RoleBadge({ role, label }) {
 }
 
 function gaugeColor(value) {
-  if (value >= 80) return 'text-red-700';
-  if (value >= 50) return 'text-red-500';
-  if (value >= 20) return 'text-amber-500';
-  return 'text-emerald-500';
+  if (value >= 50) return 'text-brick';
+  if (value >= 20) return 'text-gold';
+  return 'text-pass';
 }
 
 export function RiskGauge({ value, size = 136, label: customLabel }) {
@@ -88,8 +88,8 @@ export function RiskGauge({ value, size = 136, label: customLabel }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-semibold tabular-nums">{formatNumber(percent, 1)}%</span>
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{t('gauge.caption')}</span>
+          <span className="font-heading text-2xl font-bold tabular-nums">{formatNumber(percent, 1)}%</span>
+          <span className="text-[11px] text-muted-foreground">{t('gauge.caption')}</span>
         </div>
       </div>
       <figcaption className="text-xs text-muted-foreground">{label}</figcaption>
@@ -110,13 +110,13 @@ export function FactorBars({ factors = [] }) {
           <li key={factor.factor} title={factor.description}>
             <div className="mb-1 flex justify-between text-sm">
               <span>{t(`factor.${factor.factor}`, {}, titleCase(factor.factor))}</span>
-              <span className={cn('tabular-nums font-medium', raises ? 'text-red-600' : 'text-emerald-600')}>
+              <span className={cn('tabular-nums font-medium', raises ? 'text-brick' : 'text-pass')}>
                 {raises ? '+' : ''}{formatNumber(factor.weightContribution)}
               </span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-muted">
               <div
-                className={cn('h-full rounded-full transition-[width] duration-500', raises ? 'bg-red-500' : 'bg-emerald-500')}
+                className={cn('h-full rounded-full transition-[width] duration-500', raises ? 'bg-brick' : 'bg-pass')}
                 style={{ width: `${(Math.abs(factor.weightContribution) / max) * 100}%` }}
               />
             </div>
@@ -130,25 +130,25 @@ export function FactorBars({ factors = [] }) {
 export function PageHeader({ title, description, badge, children }) {
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div className="space-y-1">
+      <div className="min-w-0 space-y-1">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          {badge && <Badge variant="secondary">{badge}</Badge>}
+          <h1 className="text-2xl font-bold sm:text-[30px]">{title}</h1>
+          {badge && <span className="rounded-[5px] bg-foreground px-2.5 py-[3px] font-heading text-[11px] font-semibold text-[#F4D58D]">{badge}</span>}
         </div>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        {description && <p className="max-w-[560px] text-sm text-muted-foreground">{description}</p>}
       </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </header>
   );
 }
 
-const kpiAccent = { default: '', green: 'text-emerald-600', amber: 'text-amber-600', red: 'text-red-600' };
+const kpiAccent = { default: 'text-foreground', green: 'text-pass', amber: 'text-gold', red: 'text-brick' };
 export function KpiCard({ label, value, hint, tone = 'default' }) {
   return (
     <Card size="sm" className="h-full">
       <CardContent className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className={cn('text-2xl font-semibold tabular-nums', kpiAccent[tone])}>{value}</p>
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        <p className={cn('font-heading text-[1.65rem] leading-tight font-bold tabular-nums', kpiAccent[tone])}>{value}</p>
         {hint && <p className="truncate text-xs text-muted-foreground" title={hint}>{hint}</p>}
       </CardContent>
     </Card>
@@ -206,21 +206,21 @@ export function SecurityResultCard({ result, expectStatus = 403 }) {
   const blocked = result.status === expectStatus;
   const Icon = blocked ? ShieldAlert : ShieldCheck;
   return (
-    <div className="mt-3 overflow-hidden rounded-lg border bg-zinc-950 text-zinc-100" role="status" aria-live="polite">
-      <div className="flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2">
+    <div className="mt-3 overflow-hidden rounded-lg border border-ink bg-ink text-card" role="status" aria-live="polite">
+      <div className="flex items-center justify-between gap-2 border-b border-card/10 px-3 py-2">
         <code className="truncate text-xs">{result.method.toUpperCase()} /api{result.url}</code>
-        <span className={cn('rounded px-2 py-0.5 text-xs font-semibold', blocked ? 'bg-red-600' : 'bg-emerald-600')}>
+        <span className={cn('rounded px-2 py-0.5 text-xs font-semibold', blocked ? 'bg-brick' : 'bg-pass')}>
           {result.status} {blocked ? t('security.forbidden') : result.status === 200 ? 'OK' : ''}
         </span>
       </div>
-      <div className="flex gap-2 px-3 py-2 text-xs text-zinc-300">
-        <Icon className={cn('size-4 shrink-0', blocked ? 'text-red-400' : 'text-emerald-400')} aria-hidden="true" />
+      <div className="flex gap-2 px-3 py-2 text-xs text-card/80">
+        <Icon className={cn('size-4 shrink-0', blocked ? 'text-[#E39A8F]' : 'text-[#7FD1AE]')} aria-hidden="true" />
         <span>
           {blocked ? t('security.blocked') : t('security.allowed')}
-          <span className="text-zinc-500"> · {result.ms} ms</span>
+          <span className="text-card/50"> · {result.ms} ms</span>
         </span>
       </div>
-      <pre className="max-h-32 overflow-auto px-3 pb-3 text-[11px] text-cyan-300">{JSON.stringify(result.body, null, 2).slice(0, 600)}</pre>
+      <pre className="max-h-32 overflow-auto px-3 pb-3 text-[11px] text-[#CFE3D6]">{JSON.stringify(result.body, null, 2).slice(0, 600)}</pre>
     </div>
   );
 }

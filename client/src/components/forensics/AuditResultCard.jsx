@@ -7,9 +7,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
 const verdictStyle = {
-  Red: { icon: ShieldX, className: 'bg-red-600 text-white' },
-  Amber: { icon: AlertTriangle, className: 'bg-amber-500 text-white' },
-  Green: { icon: CheckCircle2, className: 'bg-emerald-600 text-white' },
+  Red: { icon: ShieldX, className: 'bg-brick text-white' },
+  Amber: { icon: AlertTriangle, className: 'bg-gold text-foreground' },
+  Green: { icon: CheckCircle2, className: 'bg-pass text-white' },
 };
 const fallbackStyle = { icon: AlertTriangle, className: 'bg-muted text-foreground' };
 
@@ -44,7 +44,7 @@ export default function AuditResultCard({ report }) {
         <div className="flex items-center gap-3">
           <Icon className="size-6 shrink-0" aria-hidden="true" />
           <div>
-            <p className="text-xs uppercase tracking-wide opacity-80">{t('audit.label')} {report.auditId ? `#${report.auditId}` : ''}</p>
+            <p className="text-xs opacity-80">{t('audit.label')} {report.auditId ? `#${report.auditId}` : ''}</p>
             <h3 className="font-semibold">{t(`audit.${report.feeVerdict ?? 'unknown'}`, {}, t('audit.unknown'))}</h3>
           </div>
         </div>
@@ -58,7 +58,7 @@ export default function AuditResultCard({ report }) {
 
       <CardContent className="space-y-5 py-5">
         {report.needsConfirmation && (
-          <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">{t('audit.excluded')}</p>
+          <p className="rounded-md bg-gold/10 px-3 py-2 text-sm text-[#7A5510]">{t('audit.excluded')}</p>
         )}
         <div className="grid items-center gap-6 sm:grid-cols-[1fr_auto]">
           <div className="divide-y">
@@ -92,7 +92,7 @@ export default function AuditResultCard({ report }) {
                   {mismatches.map(mismatch => {
                     const [title, detail] = describeMismatch(mismatch, t);
                     return (
-                      <li key={mismatch.code} className="rounded-md border-l-2 border-red-500 bg-red-50/60 px-3 py-1.5 text-sm">
+                      <li key={mismatch.code} className="rounded-md border-l-2 border-brick bg-brick/6 px-3 py-1.5 text-sm">
                         <p className="font-medium">{title}</p>
                         {detail && <p className="text-xs text-muted-foreground">{detail}</p>}
                       </li>

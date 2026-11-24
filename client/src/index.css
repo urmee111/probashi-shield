@@ -1,14 +1,19 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
 @import "@fontsource-variable/noto-sans-bengali";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: 'Inter Variable', 'Noto Sans Bengali Variable', sans-serif;
+    --font-heading: 'Space Grotesk', 'Noto Sans Bengali Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'IBM Plex Sans', 'Noto Sans Bengali Variable', ui-sans-serif, system-ui, sans-serif;
+    /* ProbashiShield passport palette */
+    --color-ink: #0D2B22;
+    --color-pass: #175C42;
+    --color-gold: #B9841C;
+    --color-brick: #9A3A30;
+    --color-paper: #EEF2EA;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -50,38 +55,38 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    --background: #EEF2EA;
+    --foreground: #10241C;
+    --card: #FDFCF6;
+    --card-foreground: #10241C;
+    --popover: #FDFCF6;
+    --popover-foreground: #10241C;
+    --primary: #175C42;
+    --primary-foreground: #FDFCF6;
+    --secondary: rgb(16 36 28 / 0.06);
+    --secondary-foreground: #10241C;
+    --muted: rgb(16 36 28 / 0.05);
+    --muted-foreground: #5B6B61;
+    --accent: rgb(23 92 66 / 0.08);
+    --accent-foreground: #10241C;
+    --destructive: #9A3A30;
+    --border: rgb(16 36 28 / 0.12);
+    --input: rgb(16 36 28 / 0.16);
+    --ring: #175C42;
+    --chart-1: #175C42;
+    --chart-2: #B9841C;
+    --chart-3: #9A3A30;
+    --chart-4: #0D2B22;
+    --chart-5: #5B6B61;
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --sidebar: #0D2B22;
+    --sidebar-foreground: #FDFCF6;
+    --sidebar-primary: #175C42;
+    --sidebar-primary-foreground: #FDFCF6;
+    --sidebar-accent: rgb(253 252 246 / 0.08);
+    --sidebar-accent-foreground: #FDFCF6;
+    --sidebar-border: rgb(253 252 246 / 0.12);
+    --sidebar-ring: #175C42;
 }
 
 .dark {
@@ -127,11 +132,16 @@
     }
   html {
     @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+    }
+  h1, h2, h3, h4 {
+    @apply font-heading;
+    letter-spacing: -0.01em;
     }
 }
 /* ProbashiShield: A07 frozen-payment and blocked-step pulse */
 @keyframes ps-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgb(220 38 38 / 0.45); }
+    0%, 100% { box-shadow: 0 0 0 0 rgb(154 58 48 / 0.5); }
     50% { box-shadow: 0 0 0 10px rgb(220 38 38 / 0); }
 }
 .ps-frozen, .ps-pulse { animation: ps-pulse 2s ease-in-out infinite; }
@@ -139,9 +149,32 @@
     .ps-frozen, .ps-pulse { animation: none; }
 }
 
+/* Winding journey route and the blocked-state ring (reference mockup). */
+@keyframes ps-dash { to { stroke-dashoffset: -32; } }
+.ps-wave { stroke-dasharray: 2 10; animation: ps-dash 3.5s linear infinite; }
+@keyframes ps-ring-brick {
+    0% { box-shadow: 0 0 0 0 rgb(154 58 48 / 0.35); }
+    70% { box-shadow: 0 0 0 16px rgb(154 58 48 / 0); }
+    100% { box-shadow: 0 0 0 0 rgb(154 58 48 / 0); }
+}
+.ps-ring { animation: ps-ring-brick 2.2s ease-out infinite; }
+.ps-rail::-webkit-scrollbar { height: 8px; }
+.ps-rail::-webkit-scrollbar-thumb { background: rgb(16 36 28 / 0.18); border-radius: 8px; }
+@media (prefers-reduced-motion: reduce) {
+    .ps-wave, .ps-ring { animation: none; }
+}
+
 /* Probashi Sahayak chatbot themes. Every chat colour reads from these variables,
    so a theme is just a value of data-chat-theme on the chat root. */
 .ps-chat {
+    /* Parts that default to the theme gradient; the Passport theme overrides them. */
+    --chat-head-bg: linear-gradient(135deg, var(--chat-from), var(--chat-to));
+    --chat-head-fg: var(--chat-on-brand);
+    --chat-accent-bg: linear-gradient(135deg, var(--chat-from), var(--chat-to));
+    --chat-accent-fg: var(--chat-on-brand);
+    --chat-launch-bg: linear-gradient(135deg, var(--chat-from), var(--chat-to));
+    --chat-launch-fg: var(--chat-on-brand);
+    --chat-hover: var(--chat-from);
     --chat-from: oklch(0.6 0.15 163);
     --chat-to: oklch(0.52 0.12 195);
     --chat-on-brand: oklch(0.99 0 0);
@@ -154,6 +187,26 @@
     --chat-border: oklch(0.91 0.015 170);
     --chat-glow: oklch(0.6 0.15 163 / 0.35);
     color: var(--chat-fg);
+}
+.ps-chat[data-chat-theme="passport"] {
+    --chat-from: #175C42;
+    --chat-to: #175C42;
+    --chat-on-brand: #FDFCF6;
+    --chat-head-bg: #0D2B22;
+    --chat-head-fg: #EDEFE4;
+    --chat-accent-bg: #B9841C;
+    --chat-accent-fg: #10241C;
+    --chat-launch-bg: #7F3129;
+    --chat-launch-fg: #FBE8E4;
+    --chat-soft: rgb(23 92 66 / 0.1);
+    --chat-soft-fg: #175C42;
+    --chat-bg: #FDFCF6;
+    --chat-surface: #FDFCF6;
+    --chat-fg: #10241C;
+    --chat-muted: #5B6B61;
+    --chat-border: rgb(16 36 28 / 0.14);
+    --chat-hover: #B9841C;
+    --chat-glow: rgb(13 43 34 / 0.28);
 }
 .ps-chat[data-chat-theme="ocean"] {
     --chat-from: oklch(0.58 0.2 265);
@@ -191,10 +244,16 @@
     color-scheme: dark;
 }
 .ps-chat-brand { background-image: linear-gradient(135deg, var(--chat-from), var(--chat-to)); color: var(--chat-on-brand); }
+.ps-chat-head { background: var(--chat-head-bg); color: var(--chat-head-fg); }
+.ps-chat-accent { background: var(--chat-accent-bg); color: var(--chat-accent-fg); }
+.ps-chat-launch { background: var(--chat-launch-bg); color: var(--chat-launch-fg); }
+@keyframes ps-chat-live { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.ps-chat-live { animation: ps-chat-live 1.8s ease-in-out infinite; }
 .ps-chat-glow { box-shadow: 0 18px 50px -12px var(--chat-glow), 0 4px 14px -6px oklch(0 0 0 / 0.18); }
 .ps-chat-dots { scrollbar-width: none; }
 .ps-chat-dots::-webkit-scrollbar { display: none; }
 .ps-chat-log { background-image: radial-gradient(circle at 100% 0%, var(--chat-soft), transparent 55%); }
+.ps-chat[data-chat-theme="passport"] .ps-chat-log { background-image: none; }
 
 @keyframes ps-chat-bounce {
     0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
@@ -209,5 +268,5 @@
 }
 .ps-chat-ring { animation: ps-chat-ring 2.4s ease-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-    .ps-chat-typing span, .ps-chat-ring { animation: none; }
+    .ps-chat-typing span, .ps-chat-ring, .ps-chat-live { animation: none; }
 }

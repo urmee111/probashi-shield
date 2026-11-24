@@ -48,7 +48,7 @@ export default function LoginPage() {
       <LanguageToggle className="absolute top-4 right-4" />
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <Brand subtitle={false} className="[&>span:first-child]:size-10" />
+          <Brand subtitle={false} tone="light" />
           <div>
             <h1 className="text-xl font-semibold tracking-tight">{t('login.welcome')}</h1>
             <p className="text-sm text-muted-foreground">{t('login.tagline')}</p>
