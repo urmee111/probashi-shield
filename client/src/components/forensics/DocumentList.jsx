@@ -33,7 +33,7 @@ function ConfirmEditor({ doc, onDone, onCancel }) {
   }
 
   return (
-    <form className="mt-3 space-y-3 rounded-lg border border-amber-200 bg-amber-50/60 p-4" onSubmit={confirm} aria-label={t('docs.confirm')}>
+    <form className="mt-3 space-y-3 rounded-lg border border-gold/35 bg-gold/8 p-4" onSubmit={confirm} aria-label={t('docs.confirm')}>
       <p className="text-sm font-medium">{t('docs.review')}</p>
       <DocumentFields idPrefix={`confirm-${doc.id}`} fields={fields} onChange={setFields} showBlurry={false} />
       {error && <p className="text-sm text-destructive">{error}</p>}

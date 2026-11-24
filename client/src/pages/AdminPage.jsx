@@ -62,7 +62,7 @@ function Overview({ overview }) {
           <CardHeader><CardTitle>{t('admin.journeys')}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-3 gap-2 text-center">
-              {[[t('journeyStatus.blocked_recovery'), journeys.blocked_recovery, 'text-red-600'], [t('journeyStatus.ready_for_flight'), journeys.ready_for_flight, 'text-emerald-600'], [t('journeyStatus.in_progress'), journeys.in_progress, '']].map(([label, value, color]) => (
+              {[[t('journeyStatus.blocked_recovery'), journeys.blocked_recovery, 'text-brick'], [t('journeyStatus.ready_for_flight'), journeys.ready_for_flight, 'text-pass'], [t('journeyStatus.in_progress'), journeys.in_progress, '']].map(([label, value, color]) => (
                 <div key={label} className="rounded-lg bg-muted/50 py-3">
                   <p className={cn('text-2xl font-semibold tabular-nums', color)}>{value ?? 0}</p>
                   <p className="text-xs text-muted-foreground">{label}</p>
@@ -145,7 +145,7 @@ export default function AdminPage() {
             </TableHeader>
             <TableBody>
               {logs.map(log => (
-                <TableRow key={log.id} className={log.action === 'UNAUTHORIZED_ACCESS_ATTEMPT' ? 'bg-red-50/60' : ''}>
+                <TableRow key={log.id} className={log.action === 'UNAUTHORIZED_ACCESS_ATTEMPT' ? 'bg-brick/6' : ''}>
                   <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{formatDate(log.created_at, true)}</TableCell>
                   <TableCell><Tone tone={actionTone[log.action]}>{log.action}</Tone></TableCell>
                   <TableCell className="text-xs">

@@ -97,7 +97,7 @@ export default function UploadPanel({ onUploaded }) {
       )}
 
       {notice && (
-        <Alert variant={notice.tone === 'error' ? 'destructive' : 'default'} className={notice.tone === 'duplicate' ? 'border-amber-300 bg-amber-50' : ''}>
+        <Alert variant={notice.tone === 'error' ? 'destructive' : 'default'} className={notice.tone === 'duplicate' ? 'border-gold/45 bg-gold/10' : ''}>
           {notice.tone === 'duplicate' && <AlertTitle>{t('upload.duplicateTitle')}</AlertTitle>}
           <AlertDescription>{notice.text}</AlertDescription>
         </Alert>

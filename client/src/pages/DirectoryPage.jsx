@@ -134,10 +134,10 @@ function CorridorTable() {
             </TableHeader>
             <TableBody>
               {corridors.map(row => (
-                <TableRow key={row.id} className={row.corridor_risk_level === 'high' ? 'bg-red-50/60' : ''} title={row.rule_source}>
+                <TableRow key={row.id} className={row.corridor_risk_level === 'high' ? 'bg-brick/6' : ''} title={row.rule_source}>
                   <TableCell className="font-medium">{row.country}</TableCell>
                   <TableCell className="text-muted-foreground">{row.job_category ?? '—'}</TableCell>
-                  <TableCell className="tabular-nums">{row.max_legal_fee_bdt == null ? <span className="text-red-600">{t('dir.notRecorded')}</span> : formatBdt(row.max_legal_fee_bdt)}</TableCell>
+                  <TableCell className="tabular-nums">{row.max_legal_fee_bdt == null ? <span className="text-brick">{t('dir.notRecorded')}</span> : formatBdt(row.max_legal_fee_bdt)}</TableCell>
                   <TableCell className="tabular-nums text-muted-foreground">
                     {row.min_expected_salary_bdt == null ? '—' : `${formatBdt(row.min_expected_salary_bdt)} – ${formatBdt(row.max_expected_salary_bdt)}`}
                   </TableCell>
