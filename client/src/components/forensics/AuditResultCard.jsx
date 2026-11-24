@@ -20,6 +20,49 @@ function describeMismatch(mismatch, t) {
   return [title, ''];
 }
 
+const bnDigits = value => String(value).replace(/\d/g, digit => '০১২৩৪৫৬৭৮৯'[digit]);
+const bnVerdict = {
+  Red: 'এটি আইনি সীমার স্পষ্ট লঙ্ঘন (লাল)।',
+  Amber: 'ফি সীমার বেশি; টাকা দেওয়ার আগে যাচাই করুন (হলুদ)।',
+  Green: 'ফি আইনি সীমার মধ্যে আছে (সবুজ)।',
+};
+
+// Builds the Bangla explanation from the structured audit fields, since the server text is English-only.
+function banglaExplanation(report, t) {
+  const { corridor, fraudRisk } = report;
+  const parts = [];
+  const charged = report.chargedFeeBdt != null ? bnDigits(formatBdt(report.chargedFeeBdt).replace('BDT', 'টাকা')) : null;
+  const cap = corridor?.max_legal_fee_bdt != null ? bnDigits(formatBdt(corridor.max_legal_fee_bdt).replace('BDT', 'টাকা')) : null;
+  const where = corridor?.country ?? report.destinationCountry;
+  if (charged && cap) {
+    const multiple = report.overchargeMultiple != null ? bnDigits(formatNumber(report.overchargeMultiple)) : null;
+    parts.push(`${where ? `${where} রুটে ` : ''}আপনার কাছ থেকে ${charged} নেওয়া হয়েছে, যেখানে আইনি সর্বোচ্চ ফি ${cap}${multiple ? ` — অর্থাৎ সীমার ${multiple} গুণ` : ''}।`);
+  } else if (charged) {
+    parts.push(`নেওয়া ফি ${charged}, কিন্তু ${where ? `${where} রুটের ` : 'এই রুটের '}আইনি সীমা পাওয়া যায়নি।`);
+  } else {
+    parts.push('ডকুমেন্ট থেকে মোট ফি পড়া যায়নি, তাই ফি যাচাই করা সম্ভব হয়নি।');
+  }
+  if (bnVerdict[report.feeVerdict]) parts.push(bnVerdict[report.feeVerdict]);
+
+  const mismatches = report.mismatches ?? [];
+  if (mismatches.length) {
+    parts.push(`ডকুমেন্টগুলোর মধ্যে ${bnDigits(mismatches.length)}টি অসঙ্গতি পাওয়া গেছে: ${mismatches.map(m => t(`mismatch.${m.code}`, {}, m.code)).join(', ')}।`);
+  } else {
+    parts.push('ডকুমেন্টগুলোর মধ্যে কোনো অসঙ্গতি পাওয়া যায়নি।');
+  }
+  for (const check of report.agencyChecks ?? []) {
+    parts.push(`এজেন্সি লাইসেন্স ${check.license}: ${t(`agency.${check.status}`, {}, check.status)}।`);
+  }
+  if (fraudRisk?.fraudProbability != null) {
+    const tier = fraudRisk.riskTier ? ` (${t(`tier.${fraudRisk.riskTier}`, {}, fraudRisk.riskTier)})` : '';
+    parts.push(`মেশিন লার্নিং মডেল অনুযায়ী প্রতারণার সম্ভাবনা ${bnDigits(formatNumber(fraudRisk.fraudProbability, 1))}%${tier}।`);
+  }
+  if (report.feeVerdict === 'Red' || report.feeVerdict === 'Amber') {
+    parts.push('টাকা দেওয়ার আগে প্রবাসী কল্যাণ হেল্পলাইন ১৬১৩৫-এ যোগাযোগ করুন।');
+  }
+  return parts.join(' ');
+}
+
 function Stat({ label, children }) {
   return (
     <div className="flex items-center justify-between gap-4 py-1.5 text-sm">
@@ -30,7 +73,7 @@ function Stat({ label, children }) {
 }
 
 export default function AuditResultCard({ report }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   if (!report) return null;
   const style = verdictStyle[report.feeVerdict] ?? fallbackStyle;
   const Icon = style.icon;
@@ -122,7 +165,7 @@ export default function AuditResultCard({ report }) {
 
         <details className="text-sm">
           <summary className="cursor-pointer font-medium">{t('audit.explanation')}</summary>
-          <p className="mt-2 text-muted-foreground">{report.explanationText}</p>
+          <p className="mt-2 text-muted-foreground">{lang === 'bn' ? banglaExplanation(report, t) : report.explanationText}</p>
         </details>
       </CardContent>
     </Card>

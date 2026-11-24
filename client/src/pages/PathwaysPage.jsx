@@ -94,6 +94,12 @@ function BlockedBanner({ count }) {
   );
 }
 
+// Full monthly range (e.g. "35,000–52,000 BDT") so it is clear why a salary target matched.
+function salaryText({ min_expected_salary_bdt: min, max_expected_salary_bdt: max }) {
+  if (min == null || max == null) return formatBdt(min ?? max);
+  return `${formatBdt(min).replace(' BDT', '')}–${formatBdt(max)}`;
+}
+
 function PathwayCard({ pathway, rank }) {
   const { t } = useI18n();
   const { corridor, agency } = pathway;
@@ -113,7 +119,7 @@ function PathwayCard({ pathway, rank }) {
         <MiniRoute to={corridor.country} />
         <dl className="grid grid-cols-[repeat(auto-fit,minmax(6.5rem,1fr))] gap-3">
           <div><dt className="text-[11px] text-muted-foreground">{t('path.feeCap')}</dt><dd className="font-heading text-sm font-bold whitespace-nowrap tabular-nums">{formatBdt(corridor.max_legal_fee_bdt)}</dd></div>
-          <div><dt className="text-[11px] text-muted-foreground">{t('path.salaryFrom')}</dt><dd className="font-heading text-sm font-bold whitespace-nowrap tabular-nums">{formatBdt(corridor.min_expected_salary_bdt)}</dd></div>
+          <div><dt className="text-[11px] text-muted-foreground">{t(corridor.max_expected_salary_bdt != null ? 'path.salaryRange' : 'path.salaryFrom')}</dt><dd className="font-heading text-sm font-bold tabular-nums">{salaryText(corridor)}</dd></div>
           <div><dt className="text-[11px] text-muted-foreground">{t('path.firstYear')}</dt><dd className="font-heading text-sm font-bold whitespace-nowrap text-pass tabular-nums">{formatBdt(pathway.firstYearNetBdt)}</dd></div>
         </dl>
       </div>
