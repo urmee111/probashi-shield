@@ -16,6 +16,7 @@ const employmentTypes = new Set(['job_offer', 'offer_letter', 'contract', 'deman
 const maxAmount = 9_999_999_999.99;
 const generalFlashModel = /^gemini-(?:\d+(?:\.\d+)?-)?flash(?:-lite)?(?:-(?:latest|preview(?:-\d{2}-\d{2})?|\d{3}))?$/;
 let lastWorkingModel;
+let modelCatalog;
 
 const responseSchema = {
   type: SchemaType.OBJECT,
@@ -133,6 +134,12 @@ async function* candidateModels(apiKey, override, signal) {
     yield cached;
   }
 
+  // The catalog rarely changes, so reuse it for 30 minutes instead of listing on every call.
+  if (modelCatalog?.apiKey === apiKey && modelCatalog.until > Date.now()) {
+    yield* modelCatalog.names.filter(name => !tried.has(name));
+    return;
+  }
+
   // The models catalog includes TTS, image generation, and Live models. Select
   // general Flash models that accept documents and can generate structured text.
   const names = new Set();
@@ -156,12 +163,14 @@ async function* candidateModels(apiKey, override, signal) {
     pageToken = page.nextPageToken;
   } while (pageToken);
 
-  yield* [...names].sort((left, right) => (
+  const ranked = [...names].sort((left, right) => (
     Number(left.includes('preview')) - Number(right.includes('preview'))
     || Number(right.includes('lite')) - Number(left.includes('lite'))
     || Number(left.endsWith('latest')) - Number(right.endsWith('latest'))
     || right.localeCompare(left, 'en', { numeric: true })
   ));
+  modelCatalog = { apiKey, names: ranked, until: Date.now() + 30 * 60_000 };
+  yield* ranked;
 }
 
 function geminiFailure(error, signal) {
@@ -179,7 +188,9 @@ function geminiFailure(error, signal) {
 // Shared Gemini call. Resolves { text, model } or rejects with code
 // GEMINI_UNAVAILABLE and a sanitized reason. SDK errors are never rethrown
 // because they can contain request URLs, API metadata, or model output.
-async function generateWithGemini(parts, { responseSchema, responseMimeType, temperature = 0, timeoutMs = 25000 } = {}) {
+async function generateWithGemini(parts, {
+  responseSchema, responseMimeType, temperature = 0, timeoutMs = 25000, maxModels = 4,
+} = {}) {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw geminiUnavailable('GEMINI_API_KEY is unset.');
   const override = process.env.GEMINI_MODEL?.trim().replace(/^models\//, '') || null;
@@ -208,7 +219,7 @@ async function generateWithGemini(parts, { responseSchema, responseMimeType, tem
         if (signal.aborted || !retryableStatuses.has(error.status)) throw error;
         unavailable.push(`${name} (HTTP ${error.status})`);
         if (lastWorkingModel?.name === name) lastWorkingModel = null;
-        if (unavailable.length >= 4) break;
+        if (unavailable.length >= maxModels) break;
         operation = 'models.list';
       }
     }

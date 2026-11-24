@@ -27,6 +27,10 @@ const pool = new Pool({
   connectionString: databaseUrl.toString(),
   max: 5,
   connectionTimeoutMillis: 5000,
+  // pg closes idle connections after 10 s by default, and reconnecting to Supabase
+  // over TLS costs about 2 s. Keep connections for 5 minutes instead.
+  idleTimeoutMillis: 300_000,
+  keepAlive: true,
   types: {
     getTypeParser(oid, format) {
       if (oid === types.builtins.INT8 && format === 'text') {
