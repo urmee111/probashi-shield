@@ -370,6 +370,7 @@ const en = {
   'chat.placeholder': 'Ask about fees, agencies…',
   'chat.send': 'Send',
   'chat.close': 'Close assistant',
+  'chat.new': 'New chat',
   'chat.language': 'Reply language',
   'chat.question': 'Your question',
   'chat.records': '{count} records',
@@ -377,6 +378,12 @@ const en = {
   'chat.gemini_rag': 'Live Gemini RAG',
   'chat.deterministic_rag': 'Grounded Fallback',
   'chat.assistant': 'Assistant',
+  'chat.greeting': 'Hi! How can I help with your migration today?',
+  'chat.theme': 'Chat theme',
+  'chat.theme.emerald': 'Emerald',
+  'chat.theme.ocean': 'Ocean',
+  'chat.theme.sunset': 'Sunset',
+  'chat.theme.midnight': 'Midnight',
 };
 
 export default en;

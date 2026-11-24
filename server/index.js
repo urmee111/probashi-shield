@@ -53,6 +53,8 @@ if (require.main === module) {
 
   app.listen(port, () => {
     console.log(`ProbashiShield API listening on port ${port}`);
+    // Open a database connection now so the first user request skips the ~2 s TLS handshake.
+    checkConnection().catch(error => console.error('Database warm-up failed', error.code || error.name));
   });
 }
 

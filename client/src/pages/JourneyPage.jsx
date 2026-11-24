@@ -70,13 +70,16 @@ export default function JourneyPage() {
       setDetail(data);
     } catch (failure) {
       setError(apiError(failure));
+      setDetail({ journey: null, failedId: id });
     }
   }, []);
 
   useEffect(() => { loadList(); }, [loadList]);
   useEffect(() => { loadDetail(selectedId); }, [selectedId, loadDetail]);
 
-  const journey = detail?.journey;
+  // Details lag the list: treat a mismatched or missing detail as loading, not as empty.
+  const detailLoading = selectedId != null && detail?.journey?.id !== selectedId && detail?.failedId !== selectedId;
+  const journey = detailLoading ? null : detail?.journey;
   const canEdit = Boolean(journey) && (user.role === 'admin' || (user.role === 'worker' && String(journey.worker_id) === String(user.id)));
   const nextStep = detail?.recoveryPlan?.nextRequiredAction?.stepOrder ?? 1;
 
@@ -86,7 +89,7 @@ export default function JourneyPage() {
       const { data } = await api.patch(`/journeys/${journey.id}/steps/${step.step_order}`, { status });
       setDetail(current => ({ ...current, ...data }));
       notify({ variant: status === 'failed' ? 'warning' : 'success', title: t('journey.stepUpdated', { step: t(`step.${step.step_name}`), status: t(`status.${status}`) }) });
-      await loadDetail(journey.id);
+      await Promise.all([loadDetail(journey.id), loadList()]);
     } catch (failure) {
       const problem = apiError(failure);
       notify({
@@ -111,7 +114,7 @@ export default function JourneyPage() {
         body: t('journey.rolledBackBody', { count: data.recoveryPlan.reopenedSteps.length }),
         timeout: 8000,
       });
-      await loadDetail(journey.id);
+      await Promise.all([loadDetail(journey.id), loadList()]);
     } catch (failure) {
       const problem = apiError(failure);
       notify({ variant: 'warning', title: t('journey.simRejected', { status: problem.status ?? '' }), body: problem.message });
@@ -162,8 +165,8 @@ export default function JourneyPage() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0 space-y-6">
-          {loading && <div className="flex justify-center py-10"><Spinner className="size-6" /></div>}
-          {!loading && !journey && (
+          {(loading || detailLoading) && <div className="flex justify-center py-10"><Spinner className="size-6" /></div>}
+          {!loading && !detailLoading && !journey && (
             <EmptyState title={t('journey.empty')}>
               {canCreate ? t('journey.emptyWorker') : t('journey.emptyNominee')}
             </EmptyState>
