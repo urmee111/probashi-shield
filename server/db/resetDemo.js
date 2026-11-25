@@ -1,10 +1,13 @@
 // Resets demo activity to a clean starting point for a demo run or video take.
 //   npm run demo:reset            -> journey #1 with all 7 steps pending
 //   npm run demo:reset -- --ready -> steps 1-4 already passed, ready for "Simulate medical expiry"
+//   npm run demo:reset -- --expiring -> like --ready, but the Medical clearance lapses 2 minutes later, so the
+//                                        server's scheduled sweep rolls the journey back with nobody using the app
 // Keeps users, agencies and corridor rules. Deletes ALL documents, audits, journeys and audit logs.
 const { pool } = require('./pool');
 const { STAGES, applyStepPatch } = require('../services/journeyEngine');
 
+const expiringInMs = 2 * 60 * 1000;
 const activityTables = ['audit_logs', 'audit_checks', 'journey_steps', 'journeys', 'documents']
   .map(table => `probashi_shield.${table}`).join(', ');
 
@@ -16,8 +19,9 @@ async function one(client, sql, params, label) {
 
 async function resetDemo() {
   const args = process.argv.slice(2);
-  const ready = args.includes('--ready');
-  if (args.some(arg => arg !== '--ready')) throw new Error('Expected only the optional --ready flag.');
+  const expiring = args.includes('--expiring');
+  const ready = expiring || args.includes('--ready');
+  if (args.some(arg => arg !== '--ready' && arg !== '--expiring')) throw new Error('Expected only the optional --ready or --expiring flag.');
 
   const client = await pool.connect();
   try {
@@ -47,6 +51,10 @@ async function resetDemo() {
       for (let order = 1; order <= 4; order += 1) {
         state = applyStepPatch(state.journey, state.steps, order, { status: 'passed' });
       }
+      if (expiring) {
+        const medical = state.steps.find(step => step.step_name === STAGES[1]);
+        medical.expires_at = new Date(Date.now() + expiringInMs).toISOString();
+      }
       for (const step of state.steps) {
         await client.query(
           'UPDATE probashi_shield.journey_steps SET status = $2, completed_at = $3, expires_at = $4 WHERE id = $1',
@@ -62,10 +70,10 @@ async function resetDemo() {
     await client.query(
       `INSERT INTO probashi_shield.audit_logs (actor_id, target_user_id, action, entity_type, entity_id, details)
        VALUES ($1, $1, 'JOURNEY_CREATED', 'journey', $2, $3)`,
-      [rahim, journey.id, { trigger: 'demo_reset', agencyId: agency, corridorId: corridor, nomineeId: fatema, stepsPassed: ready ? 4 : 0 }],
+      [rahim, journey.id, { trigger: 'demo_reset', agencyId: agency, corridorId: corridor, nomineeId: fatema, stepsPassed: ready ? 4 : 0, medicalExpiresInMinutes: expiring ? 2 : undefined }],
     );
     await client.query('COMMIT');
-    console.log(`Demo reset: journey #${journey.id} for rahim@demo.com, ${ready ? 'steps 1-4 passed' : 'all steps pending'}. Documents, audits and logs cleared.`);
+    console.log(`Demo reset: journey #${journey.id} for rahim@demo.com, ${ready ? 'steps 1-4 passed' : 'all steps pending'}${expiring ? ', Medical clearance lapses in 2 minutes' : ''}. Documents, audits and logs cleared.`);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

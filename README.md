@@ -28,7 +28,7 @@ ProbashiShield helps Bangladeshi migrant workers avoid recruitment fraud before 
 | **1. Document forensics** | Upload an offer letter, receipt or demand letter, or enter it by hand. Gemini reads the document; deterministic rules then check the fee against the legal cap (Green / Amber / Red), cross-check documents for mismatched agency licences or destinations, flag missing salary clauses, and look up the agency in the registry. An explainable ML score estimates fraud risk and lists its top factors. |
 | **2. Pathway optimizer (A02)** | Enter a destination, minimum salary and budget. The engine returns legal routes with verified agencies. If none exists, it names the **exact constraints that conflict** and suggests the **smallest change** that makes the request feasible, which can be applied in one click. |
 | **3. Self-healing journey (A07)** | A 7-step pre-departure pipeline: Agency verification → Medical → Police clearance → Training → Immigration → Visa → Flight. If a passed step expires or fails, later steps reopen, flight readiness is revoked, payments freeze, and the nominee is alerted automatically. A recovery plan says what to do next. |
-| **Extras** | Agency and corridor directory (search, filter, sort); admin command centre with live KPIs, the audit and security log, and fee-rule editing; a grounded RAG assistant that answers in Bangla, Banglish or English and cites its sources; full Bangla/English UI; Light, Dark and System themes. |
+| **Extras** | Agency and corridor directory (search, filter, sort); admin command centre with live KPIs, the audit and security log, and fee-rule editing; a grounded RAG assistant that answers in Bangla, Banglish or English and cites its sources; Bangla/English UI; Light, Dark and System themes. |
 
 The three modules form one flow: **audit documents → choose a legal pathway → start and track the journey**.
 
@@ -98,7 +98,8 @@ flowchart LR
 [server/services/journeyEngine.js](server/services/journeyEngine.js), [server/routes/journeys.js](server/routes/journeys.js)
 
 - **Ordering rules:** a step can only pass when every earlier step has passed (otherwise 400). Medical clearance is valid for 90 days and police clearance for 180.
-- **Recovery:** on every read and write the engine re-evaluates the journey. If a passed step has expired or a step has failed:
+- **Events:** the engine re-evaluates a journey on every read and write, and a **scheduled sweep** checks every 60 seconds for passed clearances that have lapsed. The sweep applies the rollback with nobody using the app, so the nominee is alerted on time. It is logged with the system as the actor and `trigger: scheduled_sweep`. Completed journeys (the worker has flown) are never rolled back.
+- **Recovery:** if a passed step has expired or a step has failed:
   - every later passed or in-progress step is reopened;
   - flight readiness is revoked and payment is frozen;
   - one locked transaction writes `STEP_EXPIRED_ROLLBACK`, `PAYMENT_FROZEN`, `FLIGHT_READINESS_REVOKED` and `NOMINEE_ALERT_DISPATCHED` to the audit log.
@@ -106,6 +107,8 @@ flowchart LR
 - **Concurrency:** writes take a row lock (`SELECT … FOR UPDATE`). Reads skip the lock unless evaluation actually changes something.
 
 **Try it:** sign in as Rahim → Journey → **Simulate medical expiry** → the banner turns red and later steps reopen → sign in as Fatema to see the nominee alert.
+
+**Try the unattended path:** run `npm run demo:reset -- --expiring` in `server`. The Medical clearance on journey #1 lapses 2 minutes later. Without opening the app, wait about 3 minutes, then sign in as Fatema: the alert is there, and the admin log shows the rollback by "System".
 
 ### Edge cases covered (M06)
 
@@ -171,6 +174,7 @@ npm run dev              # http://localhost:5000
 | `PORT` | API port, e.g. `5000` |
 | `GEMINI_API_KEY` | Optional. Enables document extraction and AI answers. |
 | `GEMINI_MODEL` | Optional. Pins a specific Gemini model. |
+| `JOURNEY_SWEEP_INTERVAL_MS` | Optional. How often the journey expiry sweep runs (default `60000`, minimum `10000`; `0` turns it off). |
 
 The server uses the bundled Supabase root CA ([server/db/supabase-ca.crt](server/db/supabase-ca.crt)) and connects with `sslmode=verify-full`.
 
@@ -187,17 +191,17 @@ Set `VITE_API_URL` (see [client/.env.example](client/.env.example)) if the API i
 ### 3. Tests
 
 ```sh
-cd server && npm test    # journey engine unit tests
+cd server && npm test    # journey engine and expiry sweep unit tests
 cd client && npm run build && npm run lint
 ```
 
 ### Resetting demo data
 
-`npm run demo:reset` (in `server`) deletes **all** documents, audits, journeys and audit logs. It keeps accounts, agencies and fee rules, and recreates journey #1 for Rahim with Fatema as nominee. Add `-- --ready` to start with steps 1–4 already passed.
+`npm run demo:reset` (in `server`) deletes **all** documents, audits, journeys and audit logs. It keeps accounts, agencies and fee rules, and recreates journey #1 for Rahim with Fatema as nominee. Add `-- --ready` to start with steps 1–4 already passed, or `-- --expiring` for the same state with the Medical clearance lapsing 2 minutes later (to show the scheduled sweep).
 
 ## Test accounts
 
-All four use the password `Password123!`. The login page also has one-click buttons for each.
+Passwords are not listed here; test access is arranged privately with the competition organizers.
 
 | Account | Role | Try this |
 |---|---|---|
@@ -215,6 +219,7 @@ All four use the password `Password123!`. The login page also has one-click butt
 - **Payment freeze:** a single "frozen" flag on the journey, not a schedule of individual payments.
 - **Rate limiting:** in memory and per server instance, so it resets on restart. That is enough for a single-instance deployment.
 - **Assistant:** retrieval is keyword-based, not vector search.
+- **Expiry sweep:** runs inside the API process every 60 seconds, not in a separate job queue. On a free hosting tier that sleeps when idle, the sweep pauses too. It runs once on wake-up, and any read also triggers the same check.
 
 ## Repository layout
 

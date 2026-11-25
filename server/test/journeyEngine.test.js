@@ -98,3 +98,19 @@ test('notes edits preserve deadlines; an explicit validity period overrides the 
   assert.equal(state.steps[1].notes, 'Clearance verified');
   assert.throws(() => patch(state, 2, { status: 'pending' }), { status: 409 });
 });
+
+test('once the worker has flown, a clearance lapsing later does not roll the journey back', () => {
+  const completed = passThrough(7);
+  assert.equal(completed.journey.overall_status, 'completed');
+  const later = new Date('2027-06-01T00:00:00Z');
+  const after = evaluateJourneyState(completed.journey, completed.steps, later);
+  assert.equal(after.journey.overall_status, 'completed');
+  assert.equal(after.journey.payment_frozen, false);
+  assert.ok(after.steps.every(step => step.status === 'passed'));
+
+  // The same lapse on a journey that has not flown yet still rolls back and freezes payments.
+  const ready = passThrough(6);
+  const blocked = evaluateJourneyState(ready.journey, ready.steps, later);
+  assert.equal(blocked.journey.overall_status, 'blocked_recovery');
+  assert.equal(blocked.journey.payment_frozen, true);
+});

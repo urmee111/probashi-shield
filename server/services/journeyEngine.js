@@ -44,9 +44,11 @@ function evaluateJourneyState(journey, steps, now = new Date()) {
   const time = new Date(now).getTime();
   const ordered = steps.map(step => ({ ...step })).sort((a, b) => a.step_order - b.step_order);
   // Find every expired clearance before reopening dependants, so simultaneous
-  // expirations are retained as independent blockers.
+  // expirations are retained as independent blockers. Once the worker has flown
+  // (completed), a clearance lapsing afterwards no longer matters.
+  const departed = journey.overall_status === 'completed';
   for (const step of ordered) {
-    if (step.status === 'passed' && step.expires_at != null && new Date(step.expires_at).getTime() < time) {
+    if (!departed && step.status === 'passed' && step.expires_at != null && new Date(step.expires_at).getTime() < time) {
       step.status = 'expired';
     }
   }

@@ -82,7 +82,7 @@ Admin "override stuck steps" works already: an admin can change steps on any jou
    - Add an SPA rewrite so routes such as `/journey` load on refresh.
 3. **Rewrite the README** with:
    - the architecture diagram
-   - test credentials (all four demo accounts, password `Password123!`)
+   - test accounts (passwords are not listed here)
    - setup steps
    - a feature-to-rubric map
    - the "synthetic data / not a live BMET feed" disclaimer
@@ -126,4 +126,4 @@ Admin "override stuck steps" works already: an admin can change steps on any jou
 | fatema@demo.com | Nominee | Alert feed, read-only lock (403) |
 | admin@demo.com | Admin | KPIs, audit and security log |
 
-Password for all four: `Password123!`
+Passwords are not listed here; test access is arranged privately with the organizers.

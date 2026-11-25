@@ -157,6 +157,33 @@ function syncJourney(journeyId, actorId, trigger = 'auto_evaluation', now = new 
   });
 }
 
+// Scheduled sweep (A07 event source): finds journeys where a passed clearance has lapsed and runs the same locked
+// rollback a read would, so the payment freeze and the nominee alert happen even if nobody opens the app.
+// The actor is null (system). syncJourney re-evaluates under a row lock, so racing a request or another
+// server instance is safe and a journey is never rolled back twice.
+async function sweepExpiredJourneys({ now = new Date(), db = pool, sync = syncJourney, limit = listLimit } = {}) {
+  const { rows } = await db.query(
+    `SELECT DISTINCT s.journey_id FROM probashi_shield.journey_steps s
+     JOIN probashi_shield.journeys j ON j.id = s.journey_id
+     WHERE s.status = 'passed' AND s.expires_at < $1 AND j.overall_status <> 'completed'
+     ORDER BY s.journey_id LIMIT $2`,
+    [now, limit],
+  );
+  const swept = [];
+  const failed = [];
+  for (const { journey_id: journeyId } of rows) {
+    try {
+      await sync(journeyId, null, 'scheduled_sweep', now);
+      swept.push(String(journeyId));
+    } catch (error) {
+      // One bad journey must not stop the rest; the next sweep retries it.
+      failed.push(String(journeyId));
+      console.error('Journey sweep failed', journeyId, error.code || error.name);
+    }
+  }
+  return { swept, failed };
+}
+
 function validateJourneyId(req, res, next) {
   if (!isRecordId(req.params.id)) return res.status(400).json({ error: 'Journey ID must be a valid record ID.' });
   return next();
@@ -367,3 +394,4 @@ router.post('/:id/simulate-expiry', ...journeyAccess, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.sweepExpiredJourneys = sweepExpiredJourneys;

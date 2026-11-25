@@ -44,6 +44,35 @@ app.use((error, _req, res, next) => {
   return res.status(status).json({ error: STATUS_CODES[status] || 'Request Failed' });
 });
 
+// Runs the journey expiry sweep on a timer. JOURNEY_SWEEP_INTERVAL_MS sets the period (default 60 s,
+// minimum 10 s); 0 turns it off. A tick is skipped while the previous one is still running.
+function startJourneySweep() {
+  const raw = process.env.JOURNEY_SWEEP_INTERVAL_MS;
+  const every = raw === undefined || raw === '' ? 60_000 : Number(raw);
+  if (!Number.isFinite(every) || every <= 0) {
+    console.log('Journey expiry sweep is off.');
+    return;
+  }
+  const period = Math.max(every, 10_000);
+  let running = false;
+  const tick = async () => {
+    if (running) return;
+    running = true;
+    try {
+      const { swept, failed } = await journeyRoutes.sweepExpiredJourneys();
+      if (swept.length) console.log(`Journey sweep rolled back journey(s) ${swept.join(', ')}.`);
+      if (failed.length) console.error(`Journey sweep will retry journey(s) ${failed.join(', ')}.`);
+    } catch (error) {
+      console.error('Journey sweep failed', error.code || error.name);
+    } finally {
+      running = false;
+    }
+  };
+  tick();
+  setInterval(tick, period).unref();
+  console.log(`Journey expiry sweep runs every ${period / 1000} s.`);
+}
+
 if (require.main === module) {
   const port = Number(process.env.PORT);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -56,6 +85,7 @@ if (require.main === module) {
     // Open a few database connections now so early requests (some run queries in parallel) skip the ~2 s TLS handshake.
     Promise.all([checkConnection(), checkConnection(), checkConnection()])
       .catch(error => console.error('Database warm-up failed', error.code || error.name));
+    startJourneySweep();
   });
 }
 
