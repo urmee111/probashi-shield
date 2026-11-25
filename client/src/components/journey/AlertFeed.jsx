@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { formatDate, titleCase } from '@/format';
 import { useI18n } from '@/i18n';
-import { EmptyState, Tone } from '@/components/shared';
+import { EmptyState, Spinner, Tone } from '@/components/shared';
 
 const tone = {
   NOMINEE_ALERT_DISPATCHED: 'muted', PAYMENT_FROZEN: 'red', STEP_EXPIRED_ROLLBACK: 'amber', STEP_FAILED_ROLLBACK: 'amber',
@@ -45,6 +45,7 @@ function describe(alert, t, lang) {
 // A dashed timeline: one dot per event, coloured by what the event means.
 export default function AlertFeed({ alerts = [] }) {
   const { t, lang } = useI18n();
+  if (alerts === null) return <div className="flex justify-center py-6"><Spinner className="size-5" /></div>;
   if (!alerts.length) return <EmptyState title={t('alerts.empty')}>{t('alerts.emptyBody')}</EmptyState>;
   return (
     <div className="max-h-[360px] overflow-y-auto pr-1">

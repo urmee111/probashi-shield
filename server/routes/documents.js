@@ -368,6 +368,31 @@ router.patch('/:id/confirm', validateDocumentId, verifyResourceAccess(getDocumen
   return res.status(result.status).json(result.body);
 });
 
+// Deletes a document the worker uploaded by mistake. Its audit checks cascade away, but the
+// immutable audit log keeps a DOCUMENT_DELETED entry with the hash, so the trail survives.
+router.delete('/:id', validateDocumentId, verifyResourceAccess(getDocumentRecordOwner), async (req, res) => {
+  const deleted = await inTransaction(async (client) => {
+    const { rows } = await client.query(
+      `DELETE FROM probashi_shield.documents WHERE id = $1
+       RETURNING id, worker_id, document_type, sha256, extraction_status`,
+      [req.params.id],
+    );
+    const [document] = rows;
+    if (!document) return null;
+    await logAudit({
+      actorId: req.user.id,
+      targetUserId: document.worker_id,
+      action: 'DOCUMENT_DELETED',
+      entityType: 'document',
+      entityId: document.id,
+      details: { docType: document.document_type, fileHash: document.sha256, extractionStatus: document.extraction_status },
+    }, client);
+    return document;
+  });
+  if (!deleted) return res.status(404).json({ error: 'Not Found' });
+  return res.json({ deleted: { id: deleted.id } });
+});
+
 router.get('/my', selectWorker, verifyResourceAccess(getDocumentOwner), async (req, res) => {
   const workerId = req.documentWorkerId;
   const [{ rows: documents }, { rows: auditHistory }] = await Promise.all([

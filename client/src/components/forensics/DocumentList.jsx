@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, Trash2 } from 'lucide-react';
 import api, { apiError } from '@/api';
 import { notify } from '@/lib/notify';
 import { useI18n } from '@/i18n';
@@ -45,6 +45,41 @@ function ConfirmEditor({ doc, onDone, onCancel }) {
   );
 }
 
+// Two-step delete: the trash icon arms it, a second click on "Delete?" sends it.
+function DeleteButton({ doc, onDeleted }) {
+  const { t } = useI18n();
+  const [armed, setArmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function remove() {
+    setBusy(true);
+    try {
+      await api.delete(`/documents/${doc.id}`);
+      notify({ variant: 'success', title: t('docs.deleted', { id: doc.id }), body: t('docs.deletedBody') });
+      onDeleted();
+    } catch (failure) {
+      const { status, message } = apiError(failure);
+      notify({ variant: 'danger', title: t('docs.deleteFailed', { status: status ?? '' }), body: message });
+      setBusy(false);
+      setArmed(false);
+    }
+  }
+
+  if (!armed) {
+    return (
+      <Button size="icon-sm" variant="ghost" aria-label={t('docs.delete', { id: doc.id })} title={t('docs.delete', { id: doc.id })} onClick={() => setArmed(true)}>
+        <Trash2 />
+      </Button>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1">
+      <Button size="sm" variant="destructive" disabled={busy} onClick={remove} autoFocus>{busy && <Spinner />}{t('docs.deleteConfirm')}</Button>
+      <Button size="sm" variant="ghost" disabled={busy} onClick={() => setArmed(false)}>{t('common.cancel')}</Button>
+    </span>
+  );
+}
+
 export default function DocumentList({ documents, onChanged }) {
   const { t } = useI18n();
   const [editing, setEditing] = useState(null);
@@ -66,6 +101,7 @@ export default function DocumentList({ documents, onChanged }) {
               {doc.needs_confirmation
                 ? editing !== doc.id && <Button size="sm" variant="outline" onClick={() => setEditing(doc.id)}>{t('docs.confirmButton')}</Button>
                 : <Tone tone="muted">{t(`method.${doc.extraction_method}`, {}, doc.extraction_status)}</Tone>}
+              <DeleteButton doc={doc} onDeleted={onChanged} />
             </div>
             {editing === doc.id && (
               <ConfirmEditor doc={doc} onCancel={() => setEditing(null)} onDone={() => { setEditing(null); onChanged(); }} />

@@ -4,13 +4,14 @@ import { cn } from '@/lib/utils';
 import api, { apiError } from '@/api';
 import { formatDate, formatNumber, titleCase } from '@/format';
 import { useI18n } from '@/i18n';
+import FeeRulesCard from '@/components/admin/FeeRulesCard';
 import { ErrorAlert, KpiCard, PageHeader, Spinner, SwitchRow, Tone, VerdictBadge } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-const FILTERS = ['', 'UNAUTHORIZED_ACCESS_ATTEMPT', 'STEP_EXPIRED_ROLLBACK', 'PAYMENT_FROZEN', 'NOMINEE_ALERT_DISPATCHED', 'DOCUMENT_AUDIT_COMPLETED', 'JOURNEY_CREATED'];
+const FILTERS = ['', 'UNAUTHORIZED_ACCESS_ATTEMPT', 'STEP_EXPIRED_ROLLBACK', 'PAYMENT_FROZEN', 'NOMINEE_ALERT_DISPATCHED', 'DOCUMENT_AUDIT_COMPLETED', 'CORRIDOR_RULE_UPDATED', 'JOURNEY_CREATED'];
 const actionTone = {
   UNAUTHORIZED_ACCESS_ATTEMPT: 'critical', STEP_EXPIRED_ROLLBACK: 'red', STEP_FAILED_ROLLBACK: 'red', PAYMENT_FROZEN: 'red',
   FLIGHT_READINESS_REVOKED: 'amber', NOMINEE_ALERT_DISPATCHED: 'blue', PAYMENT_UNFROZEN: 'green', FLIGHT_READY: 'green',
@@ -121,6 +122,8 @@ export default function AdminPage() {
       </PageHeader>
       <ErrorAlert error={error} />
       {overview ? <Overview overview={overview} /> : !error && <div className="flex justify-center py-10"><Spinner className="size-6" /></div>}
+
+      <FeeRulesCard onSaved={refresh} />
 
       <Card className="mt-6">
         <CardHeader>

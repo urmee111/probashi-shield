@@ -1,6 +1,8 @@
 const express = require('express');
 const { pool } = require('../db/pool');
-const { authenticate, requireRole } = require('../middleware/auth');
+const { inTransaction } = require('../db/transaction');
+const { authenticate, requireRole, isRecordId } = require('../middleware/auth');
+const { logAudit } = require('../services/auditLogger');
 
 const router = express.Router();
 // requireRole logs every non-admin attempt as UNAUTHORIZED_ACCESS_ATTEMPT before the 403.
@@ -111,6 +113,89 @@ router.get('/audit-logs', async (req, res) => {
       actor: id === null ? null : { id, name, email, role },
     })),
   });
+});
+
+// Corridor fee rules: admins correct a cap, risk level, source or effective date. Every change is
+// written to the audit log with before/after values, and later audits and pathways use it at once.
+const corridorFields = {
+  maxLegalFeeBdt: 'max_legal_fee_bdt',
+  corridorRiskLevel: 'corridor_risk_level',
+  ruleSource: 'rule_source',
+  effectiveDate: 'effective_date',
+};
+const corridorReturning = `id, country, job_category, max_legal_fee_bdt, corridor_risk_level, rule_source,
+  to_char(effective_date, 'YYYY-MM-DD') AS effective_date`;
+
+function validateCorridorPatch(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return { error: 'Send a JSON object.' };
+  const keys = Object.keys(body);
+  if (!keys.length || keys.some(key => !corridorFields[key])) {
+    return { error: `Send at least one of: ${Object.keys(corridorFields).join(', ')}.` };
+  }
+  const values = {};
+  if ('maxLegalFeeBdt' in body) {
+    const fee = body.maxLegalFeeBdt;
+    if (fee !== null && !(typeof fee === 'number' && Number.isFinite(fee) && fee >= 0 && fee <= 10_000_000
+        && Math.round(fee * 100) === fee * 100)) {
+      return { error: 'maxLegalFeeBdt must be null or a BDT amount from 0 to 10,000,000 with at most 2 decimals.' };
+    }
+    values.max_legal_fee_bdt = fee;
+  }
+  if ('corridorRiskLevel' in body) {
+    if (!['low', 'medium', 'high'].includes(body.corridorRiskLevel)) return { error: 'corridorRiskLevel must be low, medium or high.' };
+    values.corridor_risk_level = body.corridorRiskLevel;
+  }
+  if ('ruleSource' in body) {
+    const source = typeof body.ruleSource === 'string' ? body.ruleSource.trim() : '';
+    if (!source || source.length > 500 || /[\u0000-\u001f\u007f]/.test(source)) {
+      return { error: 'ruleSource must be 1 to 500 characters of plain text.' };
+    }
+    values.rule_source = source;
+  }
+  if ('effectiveDate' in body) {
+    const date = body.effectiveDate;
+    const valid = typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
+      && new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) === date;
+    if (!valid) return { error: 'effectiveDate must be a real calendar date in YYYY-MM-DD format.' };
+    values.effective_date = date;
+  }
+  return { values };
+}
+
+router.patch('/corridors/:id', async (req, res) => {
+  if (!isRecordId(req.params.id)) return res.status(400).json({ error: 'Corridor ID must be a valid record ID.' });
+  const { error, values } = validateCorridorPatch(req.body);
+  if (error) return res.status(400).json({ error });
+
+  const result = await inTransaction(async (client) => {
+    const { rows: [before] } = await client.query(
+      `SELECT ${corridorReturning} FROM probashi_shield.corridors WHERE id = $1 FOR UPDATE`,
+      [req.params.id],
+    );
+    if (!before) return null;
+    const columns = Object.keys(values);
+    const { rows: [after] } = await client.query(
+      `UPDATE probashi_shield.corridors SET ${columns.map((column, index) => `${column} = $${index + 2}`).join(', ')}
+       WHERE id = $1 RETURNING ${corridorReturning}`,
+      [req.params.id, ...columns.map(column => values[column])],
+    );
+    const changes = Object.fromEntries(columns
+      .filter(column => String(before[column]) !== String(after[column]))
+      .map(column => [column, { from: before[column], to: after[column] }]));
+    if (Object.keys(changes).length) {
+      await logAudit({
+        actorId: req.user.id,
+        targetUserId: null,
+        action: 'CORRIDOR_RULE_UPDATED',
+        entityType: 'corridor',
+        entityId: after.id,
+        details: { country: after.country, changes },
+      }, client);
+    }
+    return { corridor: after, changed: Object.keys(changes) };
+  });
+  if (!result) return res.status(404).json({ error: 'Not Found' });
+  return res.json(result);
 });
 
 module.exports = router;

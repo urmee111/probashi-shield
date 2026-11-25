@@ -80,13 +80,17 @@ export default function JourneyPage() {
   useEffect(() => { loadList(); }, [loadList]);
   useEffect(() => { loadDetail(selectedId); }, [selectedId, loadDetail]);
 
-  // Details lag the list: treat a mismatched or missing detail as loading, not as empty.
-  const detailLoading = selectedId != null && detail?.journey?.id !== selectedId && detail?.failedId !== selectedId;
-  const journey = detailLoading ? null : detail?.journey;
+  // Details lag the list. The list already carries steps and the recovery plan, so show that at once
+  // and let only the alert feed wait for the detail call.
+  const detailPending = selectedId != null && detail?.journey?.id !== selectedId && detail?.failedId !== selectedId;
+  const listEntry = journeys.find(entry => entry.journey.id === selectedId);
+  const view = detailPending ? (listEntry ? { ...listEntry, alerts: null } : null) : detail;
+  const detailLoading = detailPending && !listEntry;
+  const journey = view?.journey ?? null;
   const canEdit = Boolean(journey) && (user.role === 'admin' || (user.role === 'worker' && String(journey.worker_id) === String(user.id)));
   // A 403 is only demonstrable by someone who cannot already see journey #1 (not its owner, nominee or an admin).
   const canProbeIsolation = user.role !== 'admin' && !journeys.some(entry => entry.journey.id === 1);
-  const nextStep =detail?.recoveryPlan?.nextRequiredAction?.stepOrder ?? 1;
+  const nextStep = view?.recoveryPlan?.nextRequiredAction?.stepOrder ?? 1;
 
   async function patchStep(step, status) {
     setBusyStep(step.step_order);
@@ -143,7 +147,7 @@ export default function JourneyPage() {
   return (
     <>
       <PageHeader title={t('journey.title')} badge="A07" description={t('journey.description')}>
-        {isNominee && <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-ink/8 px-3 text-xs font-semibold text-ink"><Eye className="size-3.5" />{t('journey.readOnly')}</span>}
+        {isNominee && <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-ink-fg/8 px-3 text-xs font-semibold text-ink-fg"><Eye className="size-3.5" />{t('journey.readOnly')}</span>}
         {journeys.length > 0 && (
           <NativeSelect
             aria-label={t('journey.select')}
@@ -174,7 +178,7 @@ export default function JourneyPage() {
         </Card>
       )}
 
-      {journey && <div className="mb-7"><JourneyBanner journey={journey} recoveryPlan={detail.recoveryPlan} /></div>}
+      {journey && <div className="mb-7"><JourneyBanner journey={journey} recoveryPlan={view.recoveryPlan} /></div>}
 
       <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,20rem)]">
         <div className="min-w-0 space-y-7">
@@ -193,7 +197,7 @@ export default function JourneyPage() {
                 </CardHeader>
                 <CardContent>
                   <JourneyStepper
-                    steps={detail.steps} canEdit={canEdit} busyStep={busyStep}
+                    steps={view.steps} canEdit={canEdit} busyStep={busyStep}
                     onPass={step => patchStep(step, 'passed')} onFail={step => patchStep(step, 'failed')}
                   />
                   {canEdit && (
@@ -220,7 +224,7 @@ export default function JourneyPage() {
                   <Button variant="ghost" size="icon-sm" aria-label={t('common.refresh')} onClick={() => loadDetail(journey.id)}><RefreshCw /></Button>
                 </CardAction>
               </CardHeader>
-              <CardContent><AlertFeed alerts={detail.alerts} /></CardContent>
+              <CardContent><AlertFeed alerts={view.alerts} /></CardContent>
             </Card>
           )}
           {isNominee && journey && (

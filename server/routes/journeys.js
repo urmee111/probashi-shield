@@ -32,24 +32,50 @@ function normalizeStep(step) {
   };
 }
 
+const journeyColumns = `j.id, j.worker_id, j.corridor_id, j.agency_id, j.nominee_id, j.overall_status, j.flight_ready,
+            j.payment_frozen, j.created_at, j.updated_at,
+            c.country, c.job_category, a.name AS agency_name, a.license_no AS agency_license, a.status AS agency_status`;
+const journeyFrom = `FROM probashi_shield.journeys j
+     JOIN probashi_shield.corridors c ON c.id = j.corridor_id
+     LEFT JOIN probashi_shield.agencies a ON a.id = j.agency_id`;
+const stepColumns = 'id, journey_id, step_order, step_name, status, completed_at, expires_at, retry_count, notes, updated_at';
+
 async function loadJourney(db, journeyId, lock = false) {
   const { rows } = await db.query(
-    `SELECT j.id, j.worker_id, j.corridor_id, j.agency_id, j.nominee_id, j.overall_status, j.flight_ready,
-            j.payment_frozen, j.created_at, j.updated_at,
-            c.country, c.job_category, a.name AS agency_name, a.license_no AS agency_license, a.status AS agency_status
-     FROM probashi_shield.journeys j
-     JOIN probashi_shield.corridors c ON c.id = j.corridor_id
-     LEFT JOIN probashi_shield.agencies a ON a.id = j.agency_id
-     WHERE j.id = $1 ${lock ? 'FOR UPDATE OF j' : ''}`,
+    `SELECT ${journeyColumns} ${journeyFrom} WHERE j.id = $1 ${lock ? 'FOR UPDATE OF j' : ''}`,
     [journeyId],
   );
   if (!rows[0]) return null;
   const { rows: steps } = await db.query(
-    `SELECT id, step_order, step_name, status, completed_at, expires_at, retry_count, notes, updated_at
-     FROM probashi_shield.journey_steps WHERE journey_id = $1 ORDER BY step_order`,
+    `SELECT ${stepColumns} FROM probashi_shield.journey_steps WHERE journey_id = $1 ORDER BY step_order`,
     [journeyId],
   );
   return { journey: rows[0], steps: steps.map(normalizeStep) };
+}
+
+// Unlocked batch read: journeys with their steps in one round trip (Supabase latency dominates).
+async function loadJourneys(where, params) {
+  const { rows } = await pool.query(
+    `SELECT ${journeyColumns},
+            (SELECT json_agg(s ORDER BY s.step_order)
+             FROM (SELECT ${stepColumns} FROM probashi_shield.journey_steps WHERE journey_id = j.id) s) AS steps
+     ${journeyFrom} ${where} ORDER BY j.created_at DESC, j.id DESC LIMIT ${listLimit}`,
+    params,
+  );
+  return rows.map(({ steps, ...journey }) => ({ journey, steps: (steps ?? []).map(normalizeStep) }));
+}
+
+function stateChanged(before, after) {
+  const previous = new Map(before.steps.map(step => [step.step_order, step]));
+  return after.steps.some(step => stepKeys.some(key => normalizeStep(step)[key] !== previous.get(step.step_order)?.[key]))
+    || ['overall_status', 'flight_ready', 'payment_frozen'].some(key => before.journey[key] !== after.journey[key]);
+}
+
+// Reads are lock-free; only a journey whose evaluation changes (expiry, rollback) takes the locked write path.
+async function currentState(before, actorId, now = new Date()) {
+  const after = evaluateJourneyState(before.journey, before.steps, now);
+  if (!stateChanged(before, after)) return { state: view(after), changed: false };
+  return { state: await syncJourney(before.journey.id, actorId, 'auto_evaluation', now), changed: true };
 }
 
 function view({ journey, steps, recoveryPlan }) {
@@ -242,31 +268,37 @@ router.post('/', requireRole('worker', 'admin'), async (req, res) => {
 
 router.get('/', async (req, res) => {
   const scope = {
-    worker: ['WHERE worker_id = $1', [req.user.id]],
-    nominee: ['WHERE nominee_id = $1', [req.user.id]],
+    worker: ['WHERE j.worker_id = $1', [req.user.id]],
+    nominee: ['WHERE j.nominee_id = $1', [req.user.id]],
     admin: ['', []],
   }[req.user.role];
-  const { rows } = await pool.query(
-    `SELECT id FROM probashi_shield.journeys ${scope[0]} ORDER BY created_at DESC, id DESC LIMIT ${listLimit}`,
-    scope[1],
-  );
   const journeys = [];
-  for (const { id } of rows) {
-    const state = await syncJourney(id, req.user.id);
+  for (const before of await loadJourneys(...scope)) {
+    const { state } = await currentState(before, req.user.id);
     if (state) journeys.push(state);
   }
   return res.json({ journeys });
 });
 
-router.get('/:id', ...journeyAccess, async (req, res) => {
-  const state = await syncJourney(req.params.id, req.user.id);
-  if (!state) return res.status(404).json({ error: 'Not Found' });
-  const { rows: alerts } = await pool.query(
+function loadAlerts(journeyId) {
+  return pool.query(
     `SELECT id, action, details, created_at FROM probashi_shield.audit_logs
      WHERE entity_type = 'journey' AND entity_id = $1 AND action = ANY($2::text[])
      ORDER BY created_at DESC, id DESC LIMIT 20`,
-    [req.params.id, alertActions],
-  );
+    [journeyId, alertActions],
+  ).then(({ rows }) => rows);
+}
+
+router.get('/:id', ...journeyAccess, async (req, res) => {
+  // Read state and alerts together; re-read alerts only if evaluation just wrote new ones.
+  const [[before], earlyAlerts] = await Promise.all([
+    loadJourneys('WHERE j.id = $1', [req.params.id]),
+    loadAlerts(req.params.id),
+  ]);
+  if (!before) return res.status(404).json({ error: 'Not Found' });
+  const { state, changed } = await currentState(before, req.user.id);
+  if (!state) return res.status(404).json({ error: 'Not Found' });
+  const alerts = changed ? await loadAlerts(req.params.id) : earlyAlerts;
   return res.json({ ...state, alerts });
 });
 

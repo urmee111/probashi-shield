@@ -51,3 +51,10 @@ WHERE corridor.country_code = demo.country_code
     AND corridor.job_category IS NULL
     AND corridor.min_expected_salary_bdt IS NULL
     AND corridor.max_expected_salary_bdt IS NULL;
+
+-- Give every corridor rule an effective date so fee verdicts can cite one.
+-- The date is a labelled demo fixture, not an official BMET gazette date.
+UPDATE probashi_shield.corridors
+SET effective_date = DATE '2026-01-01',
+    rule_source = rule_source || ' Effective date is a demo fixture.'
+WHERE effective_date IS NULL;

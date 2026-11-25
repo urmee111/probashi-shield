@@ -54,11 +54,41 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// Brute-force guard, keyed by account rather than IP: behind a hosting proxy many users share one IP.
+// In-memory, so it resets on restart and is per instance; enough for a single-instance deployment.
+const maxFailures = 10;
+const failureWindowMs = 15 * 60 * 1000;
+const failures = new Map();
+
+function lockedFor(email, now = Date.now()) {
+  const entry = failures.get(email);
+  if (!entry || now - entry.first > failureWindowMs) {
+    failures.delete(email);
+    return 0;
+  }
+  return entry.count >= maxFailures ? Math.ceil((entry.first + failureWindowMs - now) / 1000) : 0;
+}
+
+function recordFailure(email, now = Date.now()) {
+  const entry = failures.get(email);
+  if (!entry || now - entry.first > failureWindowMs) failures.set(email, { first: now, count: 1 });
+  else entry.count += 1;
+  if (failures.size > 10_000) failures.delete(failures.keys().next().value);
+}
+
+// Compared against when the email is unknown, so response time does not reveal which accounts exist.
+const dummyHash = bcrypt.hashSync('timing-equalizer', passwordHashRounds);
+
 router.post('/login', async (req, res) => {
   const { email: emailInput, password } = req.body ?? {};
   const email = normalizeEmail(emailInput);
   if (!email || !validPassword(password)) {
     return res.status(400).json({ error: 'A valid email and password are required.' });
+  }
+  const retryAfter = lockedFor(email);
+  if (retryAfter) {
+    res.set('Retry-After', String(retryAfter));
+    return res.status(429).json({ error: `Too many failed sign-in attempts. Try again in ${Math.ceil(retryAfter / 60)} minute(s).` });
   }
 
   const { rows } = await pool.query(
@@ -66,9 +96,12 @@ router.post('/login', async (req, res) => {
     [email]
   );
   const account = rows[0];
-  if (!account || !(await bcrypt.compare(password, account.password_hash))) {
+  const passwordMatches = await bcrypt.compare(password, account?.password_hash ?? dummyHash);
+  if (!account || !passwordMatches) {
+    recordFailure(email);
     return res.status(401).json({ error: 'Invalid email or password.' });
   }
+  failures.delete(email);
 
   const { id, name, role } = account;
   const user = { id, name, email: account.email, role };
