@@ -113,7 +113,7 @@ flowchart LR
 |---|---|
 | Same document uploaded twice | 409, detected by SHA-256 hash |
 | Blurry or unclear photo | Document held as "needs confirmation" and left out of the audit until the worker confirms or corrects the fields |
-| Gemini timeout, 429/503 or malformed JSON | Tries the next model, then falls back to manual entry. The assistant falls back to a deterministic answer. |
+| Gemini timeout, 429/503 or malformed JSON | Tries the next model, then falls back to manual entry. The assistant waits at most 5.5 s, then answers from the database records with sources. After a timeout or overload it skips Gemini for 30 s, so the following questions are answered instantly. |
 | Passing step 5 before step 4 | 400 with the rule that was broken |
 | Worker opens another worker's journey or document | 403, logged as `UNAUTHORIZED_ACCESS_ATTEMPT` |
 | Nominee tries to change a step | 403 (read-only role), logged |
