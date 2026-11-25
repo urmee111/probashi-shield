@@ -54,12 +54,13 @@ export default function App() {
   return (
     <ThemeProvider>
     <I18nProvider>
-      <AuthProvider>
-        <BrowserRouter>
+      {/* The router wraps auth so login and logout can reset the URL. */}
+      <BrowserRouter>
+        <AuthProvider>
           <Shell />
-        </BrowserRouter>
-        <Toaster position="bottom-left" richColors closeButton visibleToasts={2} />
-      </AuthProvider>
+          <Toaster position="bottom-left" richColors closeButton visibleToasts={2} />
+        </AuthProvider>
+      </BrowserRouter>
     </I18nProvider>
     </ThemeProvider>
   );
