@@ -35,32 +35,45 @@ The three modules form one flow: **audit documents → choose a legal pathway �
 ## Architecture
 
 ```mermaid
-flowchart LR
-    subgraph Client["React SPA (Vite)"]
-        UI["Pages: Forensics · Pathways · Journey · Directory · Admin<br/>shadcn/ui · Tailwind · EN/BN i18n"]
-    end
+%%{init: {"flowchart": {"htmlLabels": false, "wrappingWidth": 260, "nodeSpacing": 30, "rankSpacing": 45}} }%%
+flowchart TB
+    UI["React SPA on Vercel
+    5 pages · Bangla / English"]
 
-    subgraph API["Express 5 API (Node.js)"]
-        AUTH["JWT auth + role and<br/>ownership checks"]
-        FOR["Forensics engine<br/>rules + mismatch checks"]
-        ML["Logistic-regression<br/>fraud model"]
-        OPT["Constraint solver<br/>conflict diagnosis"]
-        JRN["Journey state machine<br/>rollback + payment freeze"]
-        RAG["RAG assistant<br/>grounding checks"]
+    subgraph API["Express 5 API on Render"]
+        AUTH["JWT auth
+        role + ownership checks"]
+        FOR["Forensics engine
+        fee rules + mismatches"]
+        OPT["Pathway optimizer (A02)
+        conflicts + relaxations"]
+        JRN["Journey engine (A07)
+        rollback + payment freeze"]
+        RAG["RAG assistant
+        grounded answers"]
+        ML["Fraud risk model
+        logistic regression"]
+        SWEEP["Expiry sweep
+        every 60 s"]
         LOG["Audit logger"]
     end
 
-    DB[("Supabase Postgres<br/>schema probashi_shield")]
-    GEM["Google Gemini API"]
+    subgraph EXT["Data and AI services"]
+        direction LR
+        DB[("Supabase Postgres
+        probashi_shield schema")]
+        GEM["Google Gemini API
+        reads documents, drafts answers"]
+    end
 
-    UI -->|"HTTPS + Bearer JWT"| AUTH
+    UI -->|HTTPS + JWT| AUTH
     AUTH --> FOR & OPT & JRN & RAG
     FOR --> ML
-    FOR -->|"document extraction"| GEM
-    RAG -->|"grounded answer"| GEM
-    FOR & OPT & JRN & RAG & LOG --> DB
+    SWEEP --> JRN
     JRN --> LOG
-    AUTH -->|"403s"| LOG
+    AUTH -.->|403 attempts| LOG
+    FOR & RAG --> GEM
+    FOR & OPT & JRN & RAG & LOG --> DB
 ```
 
 **Design principle: the LLM reads, code decides.** Gemini only turns messy document text into structured fields. Every verdict (fee band, mismatch, registry status, journey transition) comes from deterministic, versioned rules that can be tested and explained. If Gemini times out, returns malformed data or is unavailable, the app falls back to manual entry and the rules still run. The AI assistant answers only from retrieved database records, and a reply is rejected if it misses the fee cap, gives a wrong helpline number or leaks prompt details.
