@@ -10,13 +10,28 @@ export function ShieldMark({ className, check = true, fill = '#B9841C', ink = '#
   );
 }
 
-export default function Brand({ className, subtitle = true, tone = 'dark' }) {
+// `size="lg"` is the login-page lockup: 1.5x the nav size with a slight slant,
+// capped by screen width so it always fits on small phones.
+export default function Brand({ className, subtitle = true, tone = 'dark', size = 'md' }) {
+  const large = size === 'lg';
   return (
-    <span className={cn('flex items-center gap-2.5', className)}>
-      <ShieldMark className="h-[30px] w-[26px] shrink-0 sm:h-[34px] sm:w-[30px]" />
+    <span className={cn('flex items-center', large ? 'gap-3' : 'gap-2.5', className)}>
+      <ShieldMark className={cn('shrink-0', large ? 'h-auto w-[min(42px,12vw)]' : 'h-[30px] w-[26px] sm:h-[34px] sm:w-[30px]')} />
       <span className="leading-none">
-        <span className={cn('block font-heading text-[17px] font-bold sm:text-[19px]', tone === 'dark' ? 'text-[#EDEFE4]' : 'text-foreground')}>ProbashiShield</span>
-        {subtitle && <span className={cn('mt-0.5 block text-[11px]', tone === 'dark' ? 'text-[#9FB3A7]' : 'text-muted-foreground')}>প্রবাসী শিল্ড</span>}
+        <span
+          className={cn(
+            'block font-heading font-bold',
+            large ? 'origin-bottom-left -skew-x-8 text-[min(calc(clamp(17px,1.6vw,20px)*1.5),8.4vw)] leading-[1.05] tracking-[-0.01em]' : 'text-[17px] sm:text-[19px]',
+            tone === 'dark' ? 'text-[#EDEFE4]' : 'text-foreground',
+          )}
+        >
+          ProbashiShield
+        </span>
+        {subtitle && (
+          <span className={cn('mt-0.5 block', large ? 'mt-1 text-[13.5px]' : 'text-[11px]', tone === 'dark' ? 'text-[#9FB3A7]' : 'text-muted-foreground')}>
+            প্রবাসী শিল্ড
+          </span>
+        )}
       </span>
     </span>
   );
