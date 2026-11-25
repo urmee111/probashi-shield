@@ -295,7 +295,7 @@ export default function RagChatbot() {
       <button
         type="button" aria-expanded={open} onClick={() => setOpen(value => !value)}
         aria-label={t('chat.fab')}
-        className="ps-chat-launch ps-chat-glow fixed right-3 bottom-3 z-50 inline-flex size-14 items-center justify-center gap-2.5 rounded-full text-[13px] font-bold transition hover:-translate-y-0.5 active:translate-y-0 sm:right-7 sm:bottom-7 sm:h-[58px] sm:w-auto sm:justify-start sm:pr-5 sm:pl-3.5"
+        className="ps-chat-launch ps-chat-glow fixed right-3 bottom-3 z-50 inline-flex size-12 items-center justify-center gap-2.5 rounded-full text-[13px] font-bold transition hover:-translate-y-0.5 active:translate-y-0 sm:right-7 sm:bottom-7 sm:h-[58px] sm:w-auto sm:justify-start sm:pr-5 sm:pl-3.5"
       >
         <span className="ps-chat-accent grid size-[30px] place-items-center rounded-full">
           {open ? <ChevronDown className="size-4" aria-hidden="true" /> : <Shield className="h-4 w-3.5" />}
