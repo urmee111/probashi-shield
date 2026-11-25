@@ -149,7 +149,7 @@ flowchart LR
 | M07 Responsive & accessible | Mobile-first layout, keyboard-usable controls, semantic landmarks, skip link, inline validation, Bangla/English toggle, Light/Dark/System theme that follows the OS setting without a flash on load |
 | M08 Deployment & docs | This README; live link above |
 | A02 | Pathway optimizer: conflict diagnosis and minimal relaxation |
-| A07 | Self-healing journey: rollback, payment freeze, nominee alerts, recovery plan |
+| A07 | Self-healing journey: a scheduled expiry sweep plus checks on every read and write trigger rollback, payment freeze, nominee alerts and a recovery plan |
 
 ## Running locally
 
