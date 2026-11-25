@@ -4,7 +4,8 @@
 
 | | |
 |---|---|
-| Live app | _added at deployment_ |
+| Live app | https://probashi-shield-two.vercel.app (frontend on Vercel) |
+| API | https://probashi-shield.onrender.com/api/health (backend on Render; the first request after idle can take up to a minute to wake the server) |
 | Demo video | _added after recording_ |
 | Test accounts | See [Test accounts](#test-accounts) |
 
@@ -27,7 +28,7 @@ ProbashiShield helps Bangladeshi migrant workers avoid recruitment fraud before 
 | **1. Document forensics** | Upload an offer letter, receipt or demand letter, or enter it by hand. Gemini reads the document; deterministic rules then check the fee against the legal cap (Green / Amber / Red), cross-check documents for mismatched agency licences or destinations, flag missing salary clauses, and look up the agency in the registry. An explainable ML score estimates fraud risk and lists its top factors. |
 | **2. Pathway optimizer (A02)** | Enter a destination, minimum salary and budget. The engine returns legal routes with verified agencies. If none exists, it names the **exact constraints that conflict** and suggests the **smallest change** that makes the request feasible, which can be applied in one click. |
 | **3. Self-healing journey (A07)** | A 7-step pre-departure pipeline: Agency verification → Medical → Police clearance → Training → Immigration → Visa → Flight. If a passed step expires or fails, later steps reopen, flight readiness is revoked, payments freeze, and the nominee is alerted automatically. A recovery plan says what to do next. |
-| **Extras** | Agency and corridor directory (search, filter, sort); admin command centre with live KPIs, the audit and security log, and fee-rule editing; a grounded RAG assistant that answers in Bangla, Banglish or English and cites its sources; full Bangla/English UI. |
+| **Extras** | Agency and corridor directory (search, filter, sort); admin command centre with live KPIs, the audit and security log, and fee-rule editing; a grounded RAG assistant that answers in Bangla, Banglish or English and cites its sources; full Bangla/English UI; Light, Dark and System themes. |
 
 The three modules form one flow: **audit documents → choose a legal pathway → start and track the journey**.
 
@@ -127,7 +128,7 @@ flowchart LR
 | **Family nominee** | Read the journey they are linked to and its alert feed | Change anything (403) |
 | **Admin / caseworker** | See all journeys, KPIs and the audit log; override stuck steps; edit corridor fee rules | — |
 
-- **Sign-in:** bcrypt password hashes (cost 12), HS256 JWTs that expire after 1 hour with the issuer checked, and a login brute-force limit per account.
+- **Sign-in:** bcrypt password hashes (cost 12), HS256 JWTs that expire after 1 hour with the issuer checked, and a login brute-force limit per account. The browser keeps the session in `sessionStorage`, so it survives a page reload but not a new tab or browser session. Logout clears it and returns to the sign-in page, and every sign-in starts on that role's home page.
 - **Ownership checks:** every record-level route verifies ownership on the server. A failure returns 403 and writes an audit entry, so ID tampering (IDOR) is blocked and visible to the admin.
 - **Fee-rule edits:** every change writes `CORRIDOR_RULE_UPDATED` with the before and after values.
 - **Secrets:** API keys and database credentials stay in `server/.env`, which is ignored by git.
@@ -142,7 +143,7 @@ flowchart LR
 | M04 Business logic | Fee bands, cross-document rules, ML risk score, 7-step state machine with ordering and expiry rules |
 | M05 Data processing | Directory search, filter and sort; average fee cap; admin average and maximum overcharge by country; verdict counts |
 | M06 Edge cases | See the edge-case table above |
-| M07 Responsive & accessible | Mobile-first layout, keyboard-usable controls, semantic landmarks, skip link, inline validation, Bangla/English toggle |
+| M07 Responsive & accessible | Mobile-first layout, keyboard-usable controls, semantic landmarks, skip link, inline validation, Bangla/English toggle, Light/Dark/System theme that follows the OS setting without a flash on load |
 | M08 Deployment & docs | This README; live link above |
 | A02 | Pathway optimizer: conflict diagnosis and minimal relaxation |
 | A07 | Self-healing journey: rollback, payment freeze, nominee alerts, recovery plan |
