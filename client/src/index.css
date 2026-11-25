@@ -313,3 +313,26 @@
 @media (prefers-reduced-motion: reduce) {
     .ps-chat-typing span, .ps-chat-ring, .ps-chat-live { animation: none; }
 }
+
+/* Login: animated journey story (route draws, plane flies, stickers float). */
+@keyframes ps-login-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes ps-login-draw { to { stroke-dashoffset: 0; } }
+@keyframes ps-login-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+@keyframes ps-login-stamp { from { opacity: 0; transform: scale(1.8) rotate(-18deg); } to { opacity: 1; transform: scale(1) rotate(-12deg); } }
+@keyframes ps-login-shine { 0%, 60% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.ps-login-rise { opacity: 0; animation: ps-login-rise .55s ease forwards; }
+.ps-login-draw { stroke-dasharray: 900; stroke-dashoffset: 900; animation: ps-login-draw 2.4s .3s ease-out forwards; }
+.ps-login-sticker { filter: drop-shadow(0 6px 10px rgb(0 0 0 / .25)); animation: ps-login-float 6s ease-in-out infinite; }
+.ps-login-stamp { animation: ps-login-stamp .55s 1.4s cubic-bezier(.2, 1.6, .4, 1) both, ps-login-float 7s 2s ease-in-out infinite; }
+.ps-login-shine { position: relative; overflow: hidden; }
+.ps-login-shine::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / .18) 50%, transparent 70%);
+    transform: translateX(-100%); animation: ps-login-shine 3.2s 2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .ps-login-rise { opacity: 1; animation: none; }
+    .ps-login-draw { stroke-dashoffset: 0; animation: none; }
+    .ps-login-sticker, .ps-login-stamp, .ps-login-shine::after { animation: none; }
+    .ps-login-plane { display: none; }
+}
