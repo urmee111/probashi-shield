@@ -166,9 +166,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-svh bg-background">
       <div className="mx-auto flex min-h-svh max-w-[1120px] flex-col p-[clamp(16px,3vw,36px)]">
-        <header className="flex items-center gap-2">
-          <Brand tone="light" />
-          <div className="ml-auto flex items-center gap-1">
+        {/* On small phones the language and theme switches move above the name so it keeps its full width. */}
+        <header className="flex items-center gap-2 max-[480px]:flex-wrap max-[480px]:gap-y-0.5">
+          <Brand tone="light" size="lg" />
+          <div className="ml-auto flex items-center gap-1 max-[480px]:order-first max-[480px]:w-full max-[480px]:justify-end">
             <LanguageToggle />
             <ThemeToggle />
           </div>
