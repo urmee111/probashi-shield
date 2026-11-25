@@ -2,6 +2,29 @@ import axios from 'axios';
 
 export const TOKEN_KEY = 'ps_token';
 export const USER_KEY = 'ps_user';
+
+// The session lives in sessionStorage: it survives F5 in the same tab, but a new tab or browser session starts
+// at Login. Preferences (theme, language) stay in localStorage. Older builds kept the session in localStorage,
+// so those keys are removed and never read.
+export function readToken() {
+  try { return sessionStorage.getItem(TOKEN_KEY); } catch { return null; }
+}
+
+export function clearSession() {
+  for (const storage of [sessionStorage, localStorage]) {
+    try {
+      storage.removeItem(TOKEN_KEY);
+      storage.removeItem(USER_KEY);
+    } catch { /* storage may be blocked */ }
+  }
+}
+
+export function clearLegacySession() {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  } catch { /* storage may be blocked */ }
+}
 export const DEMO_PASSWORD = 'Password123!';
 
 export const DEMO_ACCOUNTS = [
@@ -29,7 +52,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = readToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -38,7 +61,7 @@ api.interceptors.response.use(
   response => response,
   (error) => {
     const isLogin = error.config?.url?.includes('/auth/login');
-    if (error.response?.status === 401 && localStorage.getItem(TOKEN_KEY) && !isLogin) {
+    if (error.response?.status === 401 && readToken() && !isLogin) {
       window.dispatchEvent(new Event('ps:session-expired'));
     }
     return Promise.reject(error);

@@ -102,7 +102,20 @@ export default function RagChatbot() {
   const inputRef = useRef(null);
   const logRef = useRef(null);
   const pickingRef = useRef(false);
+  const pickerRef = useRef(null);
+  const pickerToggleRef = useRef(null);
   pickingRef.current = picking;
+
+  // A press outside the theme panel closes it. The palette button is excluded so its own click toggles cleanly.
+  useEffect(() => {
+    if (!picking) return undefined;
+    const outside = (event) => {
+      if (pickerRef.current?.contains(event.target) || pickerToggleRef.current?.contains(event.target)) return;
+      setPicking(false);
+    };
+    document.addEventListener('pointerdown', outside);
+    return () => document.removeEventListener('pointerdown', outside);
+  }, [picking]);
 
   useEffect(() => { localStorage.setItem(THEME_KEY, theme); }, [theme]);
 
@@ -164,12 +177,12 @@ export default function RagChatbot() {
                   <span className="ps-chat-live size-1.5 shrink-0 rounded-full bg-[#4ADE80]" aria-hidden="true" />{t('chat.subtitle')}
                 </p>
               </div>
-              <button type="button" className={cn(iconButton, picking && 'bg-white/12 opacity-100')} aria-label={t('chat.theme')} title={t('chat.theme')} aria-expanded={picking} onClick={() => setPicking(value => !value)}><Palette className="size-4" /></button>
+              <button ref={pickerToggleRef} type="button" className={cn(iconButton, picking && 'bg-white/12 opacity-100')} aria-label={t('chat.theme')} title={t('chat.theme')} aria-expanded={picking} onClick={() => setPicking(value => !value)}><Palette className="size-4" /></button>
               <button type="button" className={iconButton} aria-label={t('chat.new')} title={t('chat.new')} disabled={busy || !messages.length} onClick={startNewChat}><SquarePen className="size-4" /></button>
               <button type="button" className={iconButton} aria-label={t('chat.close')} title={t('chat.close')} onClick={() => setOpen(false)}><X className="size-4" /></button>
             </div>
             {picking && (
-              <div role="radiogroup" aria-label={t('chat.theme')} className="mt-3 mr-2.5 grid grid-cols-3 gap-1.5 rounded-2xl bg-black/15 p-1.5 animate-in fade-in-0 slide-in-from-top-1">
+              <div ref={pickerRef} role="radiogroup" aria-label={t('chat.theme')} className="mt-3 mr-2.5 grid grid-cols-3 gap-1.5 rounded-2xl bg-black/15 p-1.5 animate-in fade-in-0 slide-in-from-top-1">
                 {THEMES.map(option => (
                   <button
                     key={option.id} type="button" role="radio" aria-checked={theme === option.id}
