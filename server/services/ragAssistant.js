@@ -4,6 +4,14 @@ const {
 const { evaluateJourneyState } = require('./journeyEngine');
 
 const languages = new Set(['auto', 'en', 'bn', 'banglish']);
+
+// Chat-only Gemini limits. Document forensics keeps its own longer default in forensicsEngine.
+const CHAT_GEMINI_TIMEOUT_MS = 5500;
+const CHAT_GEMINI_COOLDOWN_MS = 30_000;
+// A timeout or an overload (429/503) is usually not over within seconds, so for a short while the chat answers
+// straight from the grounded fallback instead of making every question wait for Gemini to fail again.
+const overloadReason = /timed out|HTTP (429|503)\b/i;
+let geminiCooldownUntil = 0;
 const banglishMarkers = /\b(ami|apni|apnar|amar|ki|koto|taka|tk|jete|jabo|chay|chaitese|chacche|chaise|kemon|naki|hobe|ache|nai|dibo|debo|korbo|bolen|bolo|kivabe|keno|ta|ar|eta|oita|lagbe|dorkar|meyad|salam|assalam|assalamu|dhonnobad|khobor)\b/i;
 const greetingPattern = /\b(hi+|hello+|hey|hlw|helo|hola|salam|assalam|assalamu|slm|good (morning|afternoon|evening)|kemon (acho|achen|asen|achhen))\b|হ্যালো|হাই|সালাম|আসসালামু|নমস্কার|শুভ (সকাল|সন্ধ্যা)|কেমন আছেন|কেমন আছো/i;
 const thanksPattern = /\b(thanks?|thank you|thx|tnx|dhonnobad|dhonnobaad)\b|ধন্যবাদ/i;
@@ -482,10 +490,16 @@ async function answer({ db, userId, message, language: requested = 'auto' }) {
   const base = { citations: context.citations, retrievedCount: context.items.length + context.facts.length, language };
   if (degraded) base.degraded = true;
 
+  const coolingMs = geminiCooldownUntil - Date.now();
+  if (coolingMs > 0) {
+    base.fallbackReason = `Gemini cooling down after a timeout or overload; retrying in ${Math.ceil(coolingMs / 1000)}s.`;
+    return { reply: deterministicReply(context, language), mode: 'deterministic_rag', ...base };
+  }
+
   try {
     const { text } = await generateWithGemini([{ text: geminiPrompt(message, context, language) }], {
       // Chat is interactive: give up quickly and use the grounded fallback instead.
-      temperature: 0.2, timeoutMs: 8000, maxModels: 2,
+      temperature: 0.2, timeoutMs: CHAT_GEMINI_TIMEOUT_MS, maxModels: 2,
     });
     const reply = text?.trim();
     if (reply && reply.length <= 4000 && isGrounded(reply, context)) {
@@ -494,6 +508,9 @@ async function answer({ db, userId, message, language: requested = 'auto' }) {
     base.fallbackReason = 'Gemini reply failed the grounding checks (missing fee cap, wrong helpline, or prompt leak).';
   } catch (error) {
     base.fallbackReason = error.code === 'GEMINI_UNAVAILABLE' ? error.reason : 'Gemini request failed.';
+    if (error.code === 'GEMINI_UNAVAILABLE' && overloadReason.test(error.reason ?? '')) {
+      geminiCooldownUntil = Date.now() + CHAT_GEMINI_COOLDOWN_MS;
+    }
   }
   return { reply: deterministicReply(context, language), mode: 'deterministic_rag', ...base };
 }
