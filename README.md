@@ -4,8 +4,8 @@
 
 | | |
 |---|---|
-| Live app | https://probashi-shield-two.vercel.app (frontend on Vercel) |
-| API | https://probashi-shield.onrender.com/api/health (backend on Render; the first request after idle can take up to a minute to wake the server) |
+| Live app (Vercel) | https://probashi-shield-two.vercel.app/ |
+| Backend health check (Render) | https://probashi-shield.onrender.com/api/health. A keep-alive check calls it every 5 minutes, so the Render instance and the 60-second A07 expiry sweep stay active. |
 | Demo video | _added after recording_ |
 | Test accounts | See [Test accounts](#test-accounts) |
 
@@ -191,9 +191,18 @@ Set `VITE_API_URL` (see [client/.env.example](client/.env.example)) if the API i
 ### 3. Tests
 
 ```sh
-cd server && npm test    # journey engine and expiry sweep unit tests
-cd client && npm run build && npm run lint
+cd server && npm test                   # 44 automated tests, no database needed
+cd client && npm run build && npm run lint   # production build + oxlint
 ```
+
+The 44 tests in [server/test/](server/test/) run against fixtures and mocked database layers, so they never touch a real database:
+
+| File | Covers |
+|---|---|
+| [journeyEngine.test.js](server/test/journeyEngine.test.js) | Journey state engine: step ordering, expiry and failure rollback, recovery plan, no rollback after the worker has flown |
+| [journeySweep.test.js](server/test/journeySweep.test.js) | The scheduled, unattended A07 expiry sweep: runs as the system, retries a failed journey, skips completed journeys |
+| [pathwayOptimizer.test.js](server/test/pathwayOptimizer.test.js) | A02 optimizer: ranking by first-year net income, verified agencies only, the high-risk opt-in, exact conflict sets, and proof that every suggested relaxation makes the request feasible |
+| [security.test.js](server/test/security.test.js) | Auth and access control through the real API and middleware: forged or tampered JWTs (401), `worker`-only registration, cross-user 403 ownership isolation, the nominee read-only lock and admin-only routes. Each 403 is checked to be logged and to write no data. |
 
 ### Resetting demo data
 
@@ -201,7 +210,7 @@ cd client && npm run build && npm run lint
 
 ## Test accounts
 
-Passwords are not listed here; test access is arranged privately with the competition organizers.
+All four are synthetic demo accounts. The live login page has a one-click sign-in button for each (Rahim, Karim, Fatema and the Admin/Caseworker), so no password is needed. Public `/register` always creates a `worker` account: the role is set on the server and any `role` sent in the request is ignored, which prevents privilege escalation.
 
 | Account | Role | Try this |
 |---|---|---|
@@ -219,7 +228,7 @@ Passwords are not listed here; test access is arranged privately with the compet
 - **Payment freeze:** a single "frozen" flag on the journey, not a schedule of individual payments.
 - **Rate limiting:** in memory and per server instance, so it resets on restart. That is enough for a single-instance deployment.
 - **Assistant:** retrieval is keyword-based, not vector search.
-- **Expiry sweep:** runs inside the API process every 60 seconds, not in a separate job queue. On a free hosting tier that sleeps when idle, the sweep pauses too. It runs once on wake-up, and any read also triggers the same check.
+- **Expiry sweep:** runs inside the API process every 60 seconds, not in a separate job queue. On a free hosting tier that sleeps when idle, the sweep would pause too, so the deployment uses a 5-minute keep-alive check on `/api/health`. The sweep also runs once on wake-up, and any read triggers the same check.
 
 ## Repository layout
 
