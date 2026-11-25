@@ -1,10 +1,10 @@
 # ProbashiShield: progress against the proposal
 
-Last updated: 24 Nov 2026. Each item below was checked against the code, not the commit messages.
+Last updated: 25 Nov 2026. Each item below was checked against the code, not the commit messages.
 
-**Short version:** All three modules and both declared challenges (A02, A07) work end to end, and the shadcn frontend with the Bangla/English toggle is built. Deployment, the README and architecture diagram, and the demo video are still to do. There are also five promises in the proposal that the code doesn't yet meet (see "Gaps against the proposal" below).
+**Short version:** Every rubric item except deployment is now covered: all three modules, both challenges (A02, A07), full CRUD, login rate limiting, admin fee-rule editing and the README with an architecture diagram. Still to do: deploy, then record the demo video. Three proposal promises are documented as limitations in the README instead of built (see "Gaps against the proposal").
 
-> বাংলায় সংক্ষেপে: মূল ফিচার সব কাজ করছে। বাকি আছে ডিপ্লয়, README/ডায়াগ্রাম, ডেমো ভিডিও, আর প্রস্তাবের পাঁচটি ছোট ফাঁক।
+> বাংলায় সংক্ষেপে: ডিপ্লয় ছাড়া রুব্রিকের সব কাজ শেষ। বাকি আছে ডিপ্লয় আর ডেমো ভিডিও।
 
 Legend: ✅ done · 🟡 partly done · ❌ not started
 
@@ -15,13 +15,13 @@ Legend: ✅ done · 🟡 partly done · ❌ not started
 | Req. | Item (marks) | Status | What exists / what is missing |
 |---|---|---|---|
 | M01 | Complete functional system (12) | ✅ | Document audit → pathway selection → journey execution and recovery, all connected through the API and UI. |
-| M02 | Database & persistence (8) | ✅ | Postgres (Supabase): users, agencies, corridors, documents, audit_checks, journeys, journey_steps, audit_logs, with FK constraints, CHECK constraints and indexes. |
-| M03 | Auth & authorization (8) | 🟡 | JWT login with 3 roles, ownership checks, 403 plus an audit log entry on every denied request. **Missing:** database-level RLS policies and the nominee consent token (see gaps). |
+| M02 | Database & persistence (8) | ✅ | Postgres (Supabase) with FK and CHECK constraints. Full CRUD: documents can be created, read, confirmed/corrected and deleted; journeys created and updated; corridor rules updated by admins. |
+| M03 | Auth & authorization (8) | ✅ | JWT login (1 h expiry) with 3 roles, ownership checks, 403 plus an audit log entry on every denied request, login brute-force limit (429 after 10 failures per account in 15 min). RLS and the consent token are documented as limitations. |
 | M04 | Complex business logic (10) | ✅ | Deterministic fee-cap bands, cross-document mismatch rules, ML risk score, 7-step state machine with ordering rules. |
 | M05 | Dynamic data processing (6) | ✅ | Agency search/filter/sort, corridor filters, average fee cap, average and max overcharge by country (admin overview). |
 | M06 | Error & edge-case handling (8) | ✅ | SHA-256 duplicate detection (409), blurry-photo confirmation flow, automatic manual-entry fallback when Gemini fails, input validation everywhere. |
 | M07 | Responsive UI & accessibility (4) | ✅ | Mobile-first shadcn UI, keyboard-usable controls, semantic landmarks, skip link, **Bangla/English toggle**. |
-| M08 | Deployment & docs (4) | 🟡 | No exposed API keys (`.env` is gitignored and was never committed). **Missing:** live URL, README rewrite, architecture diagram. |
+| M08 | Deployment & docs (4) | 🟡 | README rewritten with architecture diagram, setup, env examples, test accounts, rubric map and limitations. No exposed keys. **Missing:** live URL. |
 | A02 | Intelligent optimization (20) | ✅ | `/api/pathways/recommend` returns minimal conflict sets and minimal relaxations; UI has "Test Conflict" and one-click "Apply Relaxation". |
 | A07 | Automated multi-step workflow (20) | ✅ | Expiry → downstream rollback → payment freeze → flight readiness revoked → nominee alert, with a recovery plan. Verified end to end against the live database. |
 
@@ -61,11 +61,11 @@ These are things the proposal promises that the code does not yet do. A judge re
 
 | # | Proposal says | Reality | Suggested fix | Effort |
 |---|---|---|---|---|
-| G1 | "Row-Level Security" | Access control is enforced in the API, with no Postgres RLS policies | Add RLS policies **or** reword to "API-level ownership checks with 403 + audit log" in README/video | 1–2 h, or 5 min to reword |
-| G2 | Nominee access "requires explicit worker-generated consent token" | Column exists; nominee is linked by email when the journey is created | Add a "Generate consent link" endpoint plus an accept step, **or** describe the email link as consent | 2–3 h |
-| G3 | Admin can "update corridor fee rules" | No endpoint or UI | `PATCH /api/admin/corridors/:id` (audited) plus a small edit form | 1–2 h |
+| G1 | "Row-Level Security" | API-level ownership checks only | 🟡 Documented honestly in the README limitations; say "API-level ownership checks" in the video | — |
+| G2 | Nominee access "requires explicit worker-generated consent token" | Nominee is linked by email when the journey is created | 🟡 Documented in the README limitations | 2–3 h if built |
+| G3 | Admin can "update corridor fee rules" | ✅ Done: `PATCH /api/admin/corridors/:id` with validation, before/after audit log, and an edit form on the Admin page | — | — |
 | G4 | Fee bands with "effective dates" | ✅ Done: seeded as a labelled demo date (1 Jan 2026) | — | — |
-| G5 | "Freezes upcoming payment schedules" | A single frozen flag | Show it as "payment milestones frozen" in the UI, **or** add a small payments table | 30 min – 2 h |
+| G5 | "Freezes upcoming payment schedules" | A single frozen flag | 🟡 Documented in the README limitations | 30 min – 2 h if built |
 
 Admin "override stuck steps" works already: an admin can change steps on any journey.
 
