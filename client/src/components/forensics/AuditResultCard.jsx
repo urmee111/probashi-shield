@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 
 const verdictStyle = {
   Red: { icon: ShieldX, className: 'bg-brick text-white' },
-  Amber: { icon: AlertTriangle, className: 'bg-gold text-foreground' },
+  Amber: { icon: AlertTriangle, className: 'bg-gold text-on-gold' },
   Green: { icon: CheckCircle2, className: 'bg-pass text-white' },
 };
 const fallbackStyle = { icon: AlertTriangle, className: 'bg-muted text-foreground' };
@@ -101,7 +101,7 @@ export default function AuditResultCard({ report }) {
 
       <CardContent className="space-y-5 py-5">
         {report.needsConfirmation && (
-          <p className="rounded-md bg-gold/10 px-3 py-2 text-sm text-[#7A5510]">{t('audit.excluded')}</p>
+          <p className="rounded-md bg-gold/10 px-3 py-2 text-sm text-amber-fg">{t('audit.excluded')}</p>
         )}
         <div className="grid items-center gap-6 sm:grid-cols-[1fr_auto]">
           <div className="divide-y">

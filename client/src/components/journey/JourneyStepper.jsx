@@ -88,7 +88,7 @@ export default function JourneyStepper({ steps, ...actions }) {
       <div className="ps-rail -mx-1 mt-[18px] hidden overflow-x-auto p-1 sm:block min-[1100px]:overflow-x-visible">
         <div className="relative min-w-(--rail-width) px-2.5 pt-[46px] pb-2.5 min-[1100px]:min-w-0 min-[1100px]:px-0" style={{ '--rail-width': `${width}px` }}>
           <svg className="absolute top-[34px] left-0 w-full" height="90" viewBox={`0 0 ${width} 90`} preserveAspectRatio="none" aria-hidden="true">
-            <path className="ps-wave" d={wavePath(width)} stroke="rgb(16 36 28 / 0.22)" strokeWidth="2" fill="none" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+            <path className="ps-wave text-foreground/22" d={wavePath(width)} stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
           </svg>
           <ol className="relative flex justify-between gap-2 min-[1100px]:gap-1" aria-label={t('stepper.label')}>
             {steps.map((step, index) => (

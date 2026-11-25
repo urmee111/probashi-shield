@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Brand from './Brand';
 import LanguageToggle from './LanguageToggle';
+import ThemeToggle from './ThemeToggle';
 import { RoleBadge, Spinner } from './shared';
 
 const links = [
@@ -61,7 +62,10 @@ export default function AppNavbar() {
         <nav className="hidden items-center gap-7 md:flex" aria-label={t('nav.main')}><NavItems role={user.role} /></nav>
 
         <div className="ml-auto flex items-center gap-1 sm:gap-5">
-          <LanguageToggle tone="dark" />
+          <div className="flex items-center gap-1">
+            <LanguageToggle tone="dark" />
+            <ThemeToggle tone="dark" />
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger className="flex h-11 items-center gap-2.5 rounded-lg px-1.5 text-left transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-gold" aria-label={t('header.menu')}>
               <span className="grid size-[34px] shrink-0 place-items-center rounded-full bg-[#1F6B4C] font-heading text-[13px] font-bold">{initials(user.name)}</span>

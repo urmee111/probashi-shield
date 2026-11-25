@@ -3,17 +3,24 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/noto-sans-bengali";
 
-@custom-variant dark (&:is(.dark *));
+/* Dark mode is driven by data-theme on <html>, set by src/theme.jsx and the inline script in index.html. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme inline {
     --font-heading: 'Space Grotesk', 'Noto Sans Bengali Variable', ui-sans-serif, system-ui, sans-serif;
     --font-sans: 'IBM Plex Sans', 'Noto Sans Bengali Variable', ui-sans-serif, system-ui, sans-serif;
     /* ProbashiShield passport palette */
-    --color-ink: #0D2B22;
-    --color-pass: #175C42;
-    --color-gold: #B9841C;
-    --color-brick: #9A3A30;
-    --color-paper: #EEF2EA;
+    --color-ink: var(--ink);
+    --color-pass: var(--pass);
+    --color-gold: var(--gold);
+    --color-brick: var(--brick);
+    --color-paper: var(--paper);
+    /* Text that must stay readable on tinted surfaces in both themes. */
+    --color-ink-fg: var(--ink-fg);
+    --color-amber-fg: var(--amber-fg);
+    --color-on-gold: var(--on-gold);
+    /* Cream text on coloured surfaces (green, terracotta, ink); constant in both themes. */
+    --color-cream: #FDFCF6;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -55,6 +62,14 @@
 }
 
 :root {
+    --ink: #0D2B22;
+    --pass: #175C42;
+    --gold: #B9841C;
+    --brick: #9A3A30;
+    --paper: #EEF2EA;
+    --ink-fg: #0D2B22;
+    --amber-fg: #7A5510;
+    --on-gold: #10241C;
     --background: #EEF2EA;
     --foreground: #10241C;
     --card: #FDFCF6;
@@ -89,38 +104,48 @@
     --sidebar-ring: #175C42;
 }
 
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+/* Passport dark: deep forest-charcoal surfaces, off-white text, brighter gold and a soft terracotta. */
+[data-theme="dark"] {
+    color-scheme: dark;
+    --ink: #08100C;
+    --pass: #2F8F67;
+    --gold: #D6A23C;
+    --brick: #C4675B;
+    --paper: #0D1512;
+    --ink-fg: #CFE3D6;
+    --amber-fg: #E8C27A;
+    --on-gold: #10241C;
+    --background: #0D1512;
+    --foreground: #E7EEE9;
+    --card: #14201B;
+    --card-foreground: #E7EEE9;
+    --popover: #1B2B24;
+    --popover-foreground: #E7EEE9;
+    --primary: #2F8F67;
+    --primary-foreground: #F4F7F2;
+    --secondary: rgb(231 238 233 / 0.07);
+    --secondary-foreground: #E7EEE9;
+    --muted: rgb(231 238 233 / 0.05);
+    --muted-foreground: #9DB0A5;
+    --accent: rgb(47 143 103 / 0.16);
+    --accent-foreground: #E7EEE9;
+    --destructive: #D9786B;
+    --border: #253B31;
+    --input: #2C4639;
+    --ring: #3FA37A;
+    --chart-1: #3FA37A;
+    --chart-2: #D6A23C;
+    --chart-3: #C4675B;
+    --chart-4: #CFE3D6;
+    --chart-5: #9DB0A5;
+    --sidebar: #08100C;
+    --sidebar-foreground: #E7EEE9;
+    --sidebar-primary: #2F8F67;
+    --sidebar-primary-foreground: #F4F7F2;
+    --sidebar-accent: rgb(231 238 233 / 0.08);
+    --sidebar-accent-foreground: #E7EEE9;
+    --sidebar-border: #253B31;
+    --sidebar-ring: #3FA37A;
 }
 
 @layer base {
@@ -159,7 +184,7 @@
 }
 .ps-ring { animation: ps-ring-brick 2.2s ease-out infinite; }
 .ps-rail::-webkit-scrollbar { height: 8px; }
-.ps-rail::-webkit-scrollbar-thumb { background: rgb(16 36 28 / 0.18); border-radius: 8px; }
+.ps-rail::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--foreground) 18%, transparent); border-radius: 8px; }
 @media (prefers-reduced-motion: reduce) {
     .ps-wave, .ps-ring { animation: none; }
 }
@@ -207,6 +232,24 @@
     --chat-border: rgb(16 36 28 / 0.14);
     --chat-hover: #B9841C;
     --chat-glow: rgb(13 43 34 / 0.28);
+}
+[data-theme="dark"] .ps-chat[data-chat-theme="passport"] {
+    --chat-from: #2F8F67;
+    --chat-to: #2F8F67;
+    --chat-on-brand: #F4F7F2;
+    --chat-head-bg: #08100C;
+    --chat-accent-bg: #D6A23C;
+    --chat-launch-bg: #9A3A30;
+    --chat-soft: rgb(47 143 103 / 0.16);
+    --chat-soft-fg: #8FD3B4;
+    --chat-bg: #14201B;
+    --chat-surface: #1B2B24;
+    --chat-fg: #E7EEE9;
+    --chat-muted: #9DB0A5;
+    --chat-border: #253B31;
+    --chat-hover: #D6A23C;
+    --chat-glow: rgb(0 0 0 / 0.5);
+    color-scheme: dark;
 }
 .ps-chat[data-chat-theme="ocean"] {
     --chat-from: oklch(0.58 0.2 265);

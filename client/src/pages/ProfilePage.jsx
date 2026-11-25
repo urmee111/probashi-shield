@@ -73,7 +73,7 @@ export default function ProfilePage() {
         <Card>
           <CardHeader><SectionTitle icon={UserRound}>{t('profile.account')}</SectionTitle></CardHeader>
           <CardContent className="flex items-center gap-4">
-            <span className="grid size-14 shrink-0 place-items-center rounded-full bg-[#1F6B4C] font-heading text-lg font-bold text-card">{initials(user.name)}</span>
+            <span className="grid size-14 shrink-0 place-items-center rounded-full bg-[#1F6B4C] font-heading text-lg font-bold text-cream">{initials(user.name)}</span>
             <div className="min-w-0 space-y-1">
               <p className="font-heading text-lg font-bold">{user.name}</p>
               <p className="truncate text-sm text-muted-foreground">{user.email}</p>

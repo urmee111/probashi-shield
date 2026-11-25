@@ -10,12 +10,12 @@ import { useI18n } from '@/i18n';
 
 // Status tints: each palette colour at ~12% behind its own text colour.
 const toneClasses = {
-  green: 'bg-pass/12 text-pass ring-pass/20',
-  amber: 'bg-gold/14 text-[#7A5510] ring-gold/30',
-  red: 'bg-brick/12 text-brick ring-brick/25',
-  critical: 'bg-brick text-card ring-brick',
-  blue: 'bg-ink/8 text-ink ring-ink/15',
-  violet: 'bg-ink/8 text-ink ring-ink/15',
+  green: 'bg-pass/12 text-pass ring-pass/20 dark:text-[#7FD1AE]',
+  amber: 'bg-gold/14 text-amber-fg ring-gold/30',
+  red: 'bg-brick/12 text-brick ring-brick/25 dark:text-[#E39A8F]',
+  critical: 'bg-brick text-cream ring-brick',
+  blue: 'bg-ink-fg/8 text-ink-fg ring-ink-fg/15',
+  violet: 'bg-ink-fg/8 text-ink-fg ring-ink-fg/15',
   muted: 'bg-foreground/6 text-muted-foreground ring-foreground/10',
 };
 
@@ -133,7 +133,7 @@ export function PageHeader({ title, description, badge, children }) {
       <div className="min-w-0 space-y-1">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold sm:text-[30px]">{title}</h1>
-          {badge && <span className="rounded-[5px] bg-foreground px-2.5 py-[3px] font-heading text-[11px] font-semibold text-[#F4D58D]">{badge}</span>}
+          {badge && <span className="rounded-[5px] bg-[#10241C] px-2.5 dark:ring-1 dark:ring-gold/40 py-[3px] font-heading text-[11px] font-semibold text-[#F4D58D]">{badge}</span>}
         </div>
         {description && <p className="max-w-[560px] text-sm text-muted-foreground">{description}</p>}
       </div>
@@ -206,18 +206,18 @@ export function SecurityResultCard({ result, expectStatus = 403 }) {
   const blocked = result.status === expectStatus;
   const Icon = blocked ? ShieldAlert : ShieldCheck;
   return (
-    <div className="mt-3 overflow-hidden rounded-lg border border-ink bg-ink text-card" role="status" aria-live="polite">
+    <div className="mt-3 overflow-hidden rounded-lg border border-ink bg-ink text-cream" role="status" aria-live="polite">
       <div className="flex items-center justify-between gap-2 border-b border-card/10 px-3 py-2">
         <code className="truncate text-xs">{result.method.toUpperCase()} /api{result.url}</code>
         <span className={cn('rounded px-2 py-0.5 text-xs font-semibold', blocked ? 'bg-brick' : 'bg-pass')}>
           {result.status} {blocked ? t('security.forbidden') : result.status === 200 ? 'OK' : ''}
         </span>
       </div>
-      <div className="flex gap-2 px-3 py-2 text-xs text-card/80">
+      <div className="flex gap-2 px-3 py-2 text-xs text-cream/80">
         <Icon className={cn('size-4 shrink-0', blocked ? 'text-[#E39A8F]' : 'text-[#7FD1AE]')} aria-hidden="true" />
         <span>
           {blocked ? t('security.blocked') : t('security.allowed')}
-          <span className="text-card/50"> · {result.ms} ms</span>
+          <span className="text-cream/50"> · {result.ms} ms</span>
         </span>
       </div>
       <pre className="max-h-32 overflow-auto px-3 pb-3 text-[11px] text-[#CFE3D6]">{JSON.stringify(result.body, null, 2).slice(0, 600)}</pre>

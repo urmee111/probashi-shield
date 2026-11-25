@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, homeFor, useAuth } from '@/auth';
 import { I18nProvider, useI18n } from '@/i18n';
+import { ThemeProvider } from '@/theme';
 import AppNavbar from '@/components/AppNavbar';
 import RagChatbot from '@/components/RagChatbot';
 import { Spinner } from '@/components/shared';
@@ -51,6 +52,7 @@ function Shell() {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <I18nProvider>
       <AuthProvider>
         <BrowserRouter>
@@ -59,5 +61,6 @@ export default function App() {
         <Toaster position="bottom-left" richColors closeButton visibleToasts={2} />
       </AuthProvider>
     </I18nProvider>
+    </ThemeProvider>
   );
 }

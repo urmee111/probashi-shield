@@ -42,7 +42,7 @@ function MiniRoute({ to, className }) {
       <span className="shrink-0 text-muted-foreground">{t('path.from')}</span>
       <span className="size-2 shrink-0 rounded-full bg-pass" aria-hidden="true" />
       <svg className="h-5 min-w-0 flex-1" viewBox="0 0 120 20" preserveAspectRatio="none" aria-hidden="true">
-        <path className="ps-wave" d="M2,10 C30,0 55,20 80,10 C100,3 110,10 118,10" stroke="rgb(16 36 28 / 0.3)" strokeWidth="2" fill="none" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+        <path className="ps-wave text-foreground/30" d="M2,10 C30,0 55,20 80,10 C100,3 110,10 118,10" stroke="currentColor" strokeWidth="2" fill="none" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
       </svg>
       <span className="size-2 shrink-0 rounded-full bg-gold" aria-hidden="true" />
       <span className="shrink-0 text-foreground">{to}</span>
@@ -53,7 +53,7 @@ function MiniRoute({ to, className }) {
 function SummaryColumn({ label, value }) {
   return (
     <div className="border-card/15 px-5 py-3 not-last:border-b sm:not-last:border-r sm:not-last:border-b-0">
-      <p className="text-[11px] text-card/75">{label}</p>
+      <p className="text-[11px] text-cream/75">{label}</p>
       <p className="mt-0.5 font-heading text-lg font-bold tabular-nums">{value}</p>
     </div>
   );
@@ -65,11 +65,11 @@ function FoundBanner({ pathways }) {
   const lowestCap = Math.min(...pathways.map(pathway => Number(pathway.corridor.max_legal_fee_bdt) || Infinity));
   const verified = pathways.filter(pathway => pathway.agency.status === 'verified').length;
   return (
-    <section className="flex flex-wrap items-center gap-5 rounded-[18px] bg-pass p-5 text-card sm:px-7 sm:py-6" role="status">
+    <section className="flex flex-wrap items-center gap-5 rounded-[18px] bg-pass p-5 text-cream sm:px-7 sm:py-6" role="status">
       <span className="grid size-12 shrink-0 place-items-center rounded-full bg-white/12"><CheckCircle2 className="size-6" aria-hidden="true" /></span>
       <div className="min-w-[200px] flex-[1_1_220px]">
         <h2 className="text-[21px] leading-tight font-bold">{t('path.found', { count: pathways.length })}</h2>
-        <p className="mt-1 text-sm text-card/80">{t('path.ranked')}</p>
+        <p className="mt-1 text-sm text-cream/80">{t('path.ranked')}</p>
       </div>
       <div className="grid w-full overflow-hidden rounded-xl bg-ink/25 sm:grid-cols-3 xl:w-auto">
         <SummaryColumn label={t('path.summaryBest')} value={formatBdt(bestNet)} />

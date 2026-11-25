@@ -50,7 +50,7 @@ export default function JourneyBanner({ journey, recoveryPlan }) {
   }
   if (journey.overall_status === 'completed') {
     return (
-      <section className="flex items-center gap-4 rounded-[18px] bg-pass p-6 text-card sm:px-[34px]" role="status">
+      <section className="flex items-center gap-4 rounded-[18px] bg-pass p-6 text-cream sm:px-[34px]" role="status">
         <span className="grid size-14 place-items-center rounded-full bg-white/12"><Plane className="size-6" aria-hidden="true" /></span>
         <h2 className="text-[21px] font-bold">{t('banner.completed')}</h2>
       </section>
@@ -58,11 +58,11 @@ export default function JourneyBanner({ journey, recoveryPlan }) {
   }
   if (journey.flight_ready) {
     return (
-      <section className="flex items-center gap-4 rounded-[18px] bg-pass p-6 text-card animate-in fade-in-0 sm:px-[34px]" role="status">
+      <section className="flex items-center gap-4 rounded-[18px] bg-pass p-6 text-cream animate-in fade-in-0 sm:px-[34px]" role="status">
         <span className="grid size-14 shrink-0 place-items-center rounded-full bg-white/12"><PlaneTakeoff className="size-6" aria-hidden="true" /></span>
         <div>
           <h2 className="text-[21px] font-bold">{t('banner.flightReady')}</h2>
-          <p className="mt-1 text-sm text-card/85">{t('banner.flightReadySub')}</p>
+          <p className="mt-1 text-sm text-cream/85">{t('banner.flightReadySub')}</p>
         </div>
       </section>
     );

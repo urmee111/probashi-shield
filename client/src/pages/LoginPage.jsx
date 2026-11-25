@@ -4,6 +4,7 @@ import { useAuth } from '@/auth';
 import { useI18n } from '@/i18n';
 import Brand from '@/components/Brand';
 import LanguageToggle from '@/components/LanguageToggle';
+import ThemeToggle from '@/components/ThemeToggle';
 import { initials } from '@/components/AppNavbar';
 import { ErrorAlert, Field, Spinner } from '@/components/shared';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -45,7 +46,10 @@ export default function LoginPage() {
 
   return (
     <main className="relative flex min-h-svh items-center justify-center bg-muted/40 px-4 py-10">
-      <LanguageToggle className="absolute top-4 right-4" />
+      <div className="absolute top-4 right-4 flex items-center gap-1">
+        <LanguageToggle />
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <Brand subtitle={false} tone="light" />
