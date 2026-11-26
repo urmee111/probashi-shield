@@ -6,7 +6,7 @@
 |---|---|
 | Live app (Vercel) | https://probashi-shield-two.vercel.app/ |
 | Backend health check (Render) | https://probashi-shield.onrender.com/api/health. A keep-alive check calls it every 5 minutes, so the Render instance and the 60-second A07 expiry sweep stay active. |
-| Demo video | _added after recording_ |
+| Demo video | [Watch on YouTube (5 min)](https://www.youtube.com/watch?v=qk1U-5-u_j8) |
 | Test accounts | See [Test accounts](#test-accounts) |
 
 ProbashiShield helps Bangladeshi migrant workers avoid recruitment fraud before they leave the country. A worker checks their offer letter and fee receipt for illegal overcharges, finds a legal migration route that fits their salary and budget, and tracks the seven pre-departure steps. When a clearance expires partway through, the system repairs the journey by itself.
