@@ -223,14 +223,14 @@ The 44 tests in [server/test/](server/test/) run against fixtures and mocked dat
 
 ## Test accounts
 
-All four are synthetic demo accounts. The live login page has a one-click sign-in button for each (Rahim, Karim, Fatema and the Admin/Caseworker), so no password is needed. Public `/register` always creates a `worker` account: the role is set on the server and any `role` sent in the request is ignored, which prevents privilege escalation.
+These are synthetic test accounts for judging only; they hold no real personal data. All four use the same password. You can also sign in with one click using the demo buttons on the live login page. Public `/register` always creates a `worker` account: the role is set on the server and any `role` sent in the request is ignored, which prevents privilege escalation.
 
-| Account | Role | Try this |
-|---|---|---|
-| `rahim@demo.com` | Worker | Load the scam demo → run the audit (5.70× Red); Pathways conflict test; journey #1 rollback |
-| `karim@demo.com` | Second worker | Journey → **Test Cross-User Isolation** → 403 on Rahim's journey |
-| `fatema@demo.com` | Nominee | Read-only alert feed; the step-change attempt returns 403 |
-| `admin@demo.com` | Admin | KPIs, audit and security log, fee-rule editing |
+| Email | Password | Role | Try this |
+|---|---|---|---|
+| `rahim@demo.com` | `Password123!` | Worker | Load the scam demo → run the audit (5.70× Red); Pathways conflict test; journey #1 rollback |
+| `karim@demo.com` | `Password123!` | Second worker | Journey → **Test Cross-User Isolation** → 403 on Rahim's journey |
+| `fatema@demo.com` | `Password123!` | Nominee | Read-only alert feed; the step-change attempt returns 403 |
+| `admin@demo.com` | `Password123!` | Admin | KPIs, audit and security log, fee-rule editing |
 
 ## Limitations and honest notes
 
